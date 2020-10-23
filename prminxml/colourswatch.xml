@@ -1,0 +1,373 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+
+<chapter title="Colour Swatches">
+
+<section title="Introduction and Overview">
+
+<p>A colour swatch is a gadget used to display an example colour and allow
+the user to select another :</p>
+
+<p>
+<image type="png" src="colourswatch.png" caption="The Colour Swatch gadget" />
+</p>
+
+<p>The colour swatch can display any 24bit RGB colour or a 'None' value. The
+gadget requires the Wimp 3.98 or later to function correctly.</p>
+
+<p>A colour swatch has a pop-up colour menu placed 8 OS Units to the right
+of the display area. The display area will show the currently selected
+colour as its filled background. On selecting the pop-up menu icon, a
+ColourDBox will be displayed, allowing the selection of another colour.
+Once a selection has been made and confirmed, the display will be updated
+and a notification message sent to the application.</p>
+
+<p>The application can decide whether a 'None' option is available on
+the colour selector. If the 'None' option is available and selected, the
+display icon will show the text 'None' and the user will be notified
+of this. Where possible, the interface has been kept similar to that
+of the ColourDBox.</p>
+
+<p>Bits in the flags word for a colour swatch gadget have the following
+meanings:</p>
+
+<bitfield-table>
+ <bit number="0" state="reserved" />
+ <bit number="2">when set, include a <strong>None</strong> button in the
+                 dialogue box</bit>
+ <bit number="3">when set, select the <strong>None</strong> button when the
+                 dialogue box is created</bit>
+ <bit number="4-31" state="reserved" />
+</bitfield-table>
+
+<subsection title="Colour Swatch templates">
+
+<value-table head-number="Field" head-name="Size in bytes" head-value="Type">
+<value number="colour" name="4">word</value>
+<value number="title" name="4">MsgReference</value>
+</value-table>
+
+</subsection>
+</section>
+
+
+
+
+<section title="Toolbox methods">
+
+<tboxmethod-definition name="ColourSwatch_GetColour"
+                       number="1403000"
+                       description="Read the colour of the Colour Swatch gadget"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403000</register-use>
+<register-use number="3">Gadget component id</register-use>
+</entry>
+
+<exit>
+<register-use number="0">Whether the 'None' option is selected :
+ <value-table>
+  <value number="0">'None' is not selected</value>
+  <value number="1">'None' is selected</value>
+ </value-table>
+</register-use>
+<register-use number="1">Colour number in the form &hex;BBGGRR00</register-use>
+<register number="2-9" state="preserved" />
+
+</exit>
+
+<use>
+
+<p>This method is used to read the colour currently in use by the
+ColourSwatch gadget.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_get_colour ( unsigned int flags,<br />
+                                                  ObjectId window,<br />
+                                                  ComponentId swatch,<br />
+                                                  int *outflags,<br />
+                                                  unsigned long *colour<br />
+                                                );<br />
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+<tboxmethod-definition name="ColourSwatch_SetColour"
+                       number="1403001"
+                       description="Set the colour of the Colour Swatch gadget"
+                >
+
+<entry>
+
+<register-use number="0">flags :
+ <bitfield-table>
+  <bit number="0">Select the 'None' option</bit>
+ </bitfield-table>
+</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403001</register-use>
+<register-use number="3">Gadget component id</register-use>
+<register-use number="4">Colour number in the form &hex;BBGGRR00</register-use>
+</entry>
+
+<exit>
+<register number="0-9" state="preserved" />
+</exit>
+
+<use>
+
+<p>This method is used to change the colour currently in use by the
+ColourSwatch gadget.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_set_colour ( unsigned int flags,<br />
+                                                  ObjectId window,<br />
+                                                  ComponentId swatch,<br />
+                                                  unsigned long colour<br />
+                                                );<br />
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+<tboxmethod-definition name="ColourSwatch_GetTitle"
+                       number="1403002"
+                       description="Read the title of the colour selector used by the Colour Swatch gadget"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403002</register-use>
+<register-use number="3">Gadget component id</register-use>
+<register-use number="4">pointer to buffer</register-use>
+<register-use number="5">size of buffer</register-use>
+</entry>
+
+<exit>
+
+<register-use number="5">size of buffer required (if R4 was 0) <br />
+else buffer pointed at by R4 contains text<br />
+R5 holds number of bytes written to buffer</register-use>
+</exit>
+
+<use>
+
+<p>This method is used to read the title used on the ColourPicker dialogue
+which is displayed when the pop-up menu icon is selected.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_get_title ( unsigned int flags,<br />
+                                                 ObjectId window,<br />
+                                                 ComponentId swatch,<br />
+                                                 char *buffer,<br />
+                                                 int buff_size,<br />
+                                                 int *nbytes<br />
+                                               );
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+<tboxmethod-definition name="ColourSwatch_SetTitle"
+                       number="1403003"
+                       description="Change the title of the colour selector used by the Colour Swatch gadget"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403003</register-use>
+<register-use number="3">Gadget component id</register-use>
+<register-use number="4">pointer to string to use</register-use>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+
+<p>This method is used to change the title used on the ColourPicker dialogue
+which is displayed when the pop-up menu icon is selected. Any active
+ColourPicker for this gadget will be closed when this method is used.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_set_title ( unsigned int flags,<br />
+                                                 ObjectId window,<br />
+                                                 ComponentId swatch,<br />
+                                                 char *title<br />
+                                               );
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+<tboxmethod-definition name="ColourSwatch_GetNoneAvailable"
+                        number="1403004"
+                        description="Read whether the 'None' option is available on the colour selector used by the ColourSwatch"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403004</register-use>
+<register-use number="3">Gadget component id</register-use>
+</entry>
+
+
+<exit>
+<register-use number="0">flags:
+ <bitfield-table>
+  <bit number="0"><strong>None</strong> is available</bit>
+ </bitfield-table>
+</register-use>
+</exit>
+
+<use>
+
+<p>This method returns whether the <strong>None</strong> option appears in a
+colour selector window used when the pop-up menu is selected.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_get_none_available ( unsigned int flags,<br />
+                                                          ObjectId window,<br />
+                                                          ComponentId swatch,<br />
+                                                          int *out_flags<br />
+                                                        );<br />
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+<tboxmethod-definition name="ColourSwatch_SetNoneAvailable"
+                        number="1403005"
+                        description="Set whether the 'None' option is available on the colour window"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">Window object id</register-use>
+<register-use number="2">&hex;1403005</register-use>
+<register-use number="3">Gadget component id</register-use>
+<register-use number="4">non-zero means <strong>None</strong> is available</register-use>
+</entry>
+
+<exit>
+
+<register-use number="1-R9" state="preserved" />
+
+</exit>
+
+<use>
+
+<p>This method sets whether a <strong>None</strong> option appears in the colour selector displayed when .</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *colourswatch_set_none_available ( unsigned int flags,<br />
+                                                          ObjectId window,<br />
+                                                          ComponentId swatch,<br />
+                                                          int none<br />
+                                                        );
+</code>
+</declaration>
+</tboxmethod-definition>
+
+
+</section>
+<section title="Toolbox events">
+<!-- Declared as 'String set Toolbox events' -->
+
+<tboxmessage-definition name="ColourSwatch_ColourChanged"
+                        number="140300"
+                        description="Notification that the colour of the ColourSwatch has been changed"
+                >
+
+<message-table>
+<message offset="8">&hex;140300</message>
+<message offset="12">flags :
+ <bitfield-table>
+  <bit number="0">the 'None' option was selected</bit>
+ </bitfield-table>
+</message>
+<message offset="16">colour in the form &hex;BBGGRR00</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised when the colour of the ColourSwatch has
+changed. If the 'None' option was available and selected, then bit 0 of the
+flags word is set.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+typedef struct<br />
+{<br />
+        ToolboxEventHeader hdr;<br />
+        int                new_colour;<br />
+} ColourSwatchColourChangedEvent;
+</code>
+</declaration>
+</tboxmessage-definition>
+
+
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" date="02 May 2004" title="Initial version" />
+  <revision number="2" author="ROL" date="06 May 2004" title="Corrected reference">
+   <change>The gadget format uses a MsgReference, not a StringReference, 'cos it's
+           user visible.</change>
+  </revision>
+ </history>
+</meta>
+
+</riscos-prm>

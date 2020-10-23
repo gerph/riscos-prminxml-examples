@@ -1,0 +1,801 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+
+<chapter title="OptionsWindow Dialogue box class">
+
+<section title="Introduction and Overview">
+<p>An OptionsWindow dialogue object is used to provide a standard, organised
+manner to allow configuration of the options for an application or document
+through a dialogue box.</p>
+
+<p>As applications grow in complexity, so their configuration requirements
+will grow. Many methods for configuring large numbers of options have been
+used throughout the life of RISC OS, with varying degrees of success. Whilst
+there will always be applications which have specific requirements for their
+configuration, it is advantageous to standardise the style of configuration
+tools on a particular form.</p>
+
+<p>The form which is most functional and which has been standardised upon
+by a number of applications, best known of which was Browse has been used.
+This is a single window interface using a number of panes selected through
+radio buttons.</p>
+
+<subsection title="User interface">
+
+<p>A OptionsWindow dialogue takes the following form:</p>
+
+<p>
+<image type="png" src="optionswindow.png" caption="The OptionsWindow Dialogue" />
+</p>
+
+<p>
+The user interface provided by the OptionsWindow conforms to that declared
+in the StyleGuide and used by modern RISC OS applications. The window
+components perform the following functions :
+</p>
+
+<p>
+<list type="unordered">
+<item><p>Selecting a radio icon causes the currently displayed pane to be
+hidden and replaced by the appropriate pane.</p></item>
+
+<item><p>The 'Set' button, where present, will cause the current settings
+from all panes to be configure.<br />
+If Select is used to choose the 'Set' button, the window will be
+closed.<br />
+If Adjust is used to choose the 'Set' button, the window remains
+open.
+</p>
+</item>
+
+<item><p>The 'Cancel' button, where present, will cause the settings shown
+within the panes to be reset to the current configuration.<br />
+If Select is used to choose the 'Cancel' button, the window will be
+closed.<br />
+If Adjust is used to choose the 'Cancel' button, the window remains open.
+</p>
+</item>
+   
+<item><p>The 'Save' button, where present, will cause the current settings
+from all panes to be configured and the settings written to disc.<br />
+If Select is used to choose the 'Save' button, the window will be
+closed.<br />
+If Adjust is used to choose the 'Save' button, the window remains open.
+</p></item>
+
+<item><p>The 'Default' button, where present, will cause the current
+settings in all panes to be set to the defaults but not configured.<br />
+The operation is the same for Select and Adjust.</p>
+</item>
+
+<item><p>The 'Enter' key will trigger the operation of the button designated
+as the default button in the options window - the lowest of the
+buttons.<br />
+The window will be closed.
+</p></item>
+
+<item><p>The 'Escape' key will trigger the operation of the button
+designated as the cancel button in the options window - the second lowest of
+the buttons (Default is never used for this operation). If no button is
+present, the default operation is selected.<br />
+The window will be closed.</p></item>
+
+<item><p>Help text is provided for all buttons and radio icons.</p></item>
+
+<item><p>Where modifications have been made to the settings, the title bar
+will indicate this with an asterisk.</p></item>
+
+<item><p>Each pane is considered independant of its siblings. No settings
+within one pane affect the settings in another pane.</p></item>
+   
+</list>
+</p>
+</subsection>
+</section>
+
+
+<section title="Technical details">
+<p>
+The OptionsWindow object consists of a Window controlled by OptionsWindow
+and a number of pane Window objects, supplied by the application. These
+panes are referred to as components of the OptionsWindow object, and are
+dealt with as such in method operations on the object and events returned by
+the object.</p>
+
+<subsection title="Attributes">
+
+<p>A OptionsWindow object has the following attributes which are specified in its object template and can be manipulated at run-time by the client application:</p>
+
+<value-table head-number="Attributes" head-value="Description">
+<value number="flags">flags for this component
+ <bitfield-table>
+ <bit number="0">indicates that the pane Windows will not
+                 be monitored for 'Modified' events automatically.</bit>
+ 
+ <bit number="1">indicates that the object has a 'Set' button.</bit>
+ <bit number="2">indicates that the object has a 'Cancel' button.</bit>
+ <bit number="3">indicates that the object has a 'Save' button.</bit>
+ <bit number="4">indicates that the object has a 'Default' button.</bit>
+
+ </bitfield-table>
+</value>
+<value number="title">alternative title to use instead of 'Options'<br />
+(0 means use default title)</value>
+<value number="windowlist">this is a comma-separated string which lists the names of the panes which should be automatically attached to the OptionsWindow.</value>
+</value-table>
+
+</subsection>
+<subsection title="Manipulating a OptionsWindow object">
+
+<subsubsection title="Creating and deleting a OptionsWindow object">
+
+<p>An OptionsWindow object is created using SWI Toolbox_CreateObject.</p>
+
+<p>When this object is created it will automatically attach any the objects listed in the Template (see <reference href="?TOOLINTRO.HTML#24528">Attached objects</reference>).</p>
+
+<p>An OptionsWindow object is deleted using SWI Toolbox_DeleteObject. </p>
+
+<p>The setting of the non-recursive delete bit will prevent the attached
+panes from being deleted with the OptionsWindow object.</p>
+
+</subsubsection>
+<subsubsection title="Showing a OptionsWindow object">
+
+<p>When an OptionsWindow object is displayed on the screen using SWI Toolbox_ShowObject it has the following behaviour:</p>
+
+<value-table head-number="Show type" head-value="Position">
+<value number="0 (default)">the underlying window is shown centred in the screen.</value>
+<value number="1 (full spec)">fully specified window position in R3:
+ <offset-table>
+  <offset number="0">visible area minimum x coordinate</offset>
+  <offset number="4">visible area maximum y coordinate</offset>
+ </offset-table>
+</value>
+<value number="2 (topleft)">specifying the top left corner in R3 :
+ <offset-table>
+  <offset number="0">visible area minimum x coordinate</offset>
+  <offset number="4">visible area maximum y coordinate</offset>
+ </offset-table>
+</value>
+</value-table>
+
+</subsubsection>
+
+<subsubsection title="Manipulating OptionsWindow panes">
+<p>
+The application can either supply a list of Window objects which will be
+automatically attached to the OptionsWindow when it is created, or attach
+pane Window objects at run time. When automatically attached, the panes will
+be given ascending component numbers, starting at 0.
+</p>
+
+<p>The panes used in the OptionsWindow can be controlled through a number of
+methods provided by the OptionsWindow object:</p>
+<p>
+<list type="unordered">
+ <item><reference type="tboxmethod" name="OptionsWindow_AddPane" /></item>
+ <item><reference type="tboxmethod" name="OptionsWindow_RemovePane" /></item>
+ <item><reference type="tboxmethod" name="OptionsWindow_SelectPane" /></item>
+ <item><reference type="tboxmethod" name="OptionsWindow_EnumeratePanes" /></item>
+</list>
+</p>
+</subsubsection>
+
+<subsubsection title="Reading the state of the OptionsWindow dialogue">
+
+<p>The OptionsWindow object has only one piece of state information, the 'modified flag. It can be manipulated with:</p>
+
+<p>
+<list type="unordered">
+<item><reference type="tboxmethod" name="OptionsWindow_SetModified" /></item>
+<item><reference type="tboxmethod" name="OptionsWindow_GetModified" /></item>
+</list>
+</p>
+
+</subsubsection>
+</subsection>
+
+<subsection title="Modification checks">
+<p>The OptionsWindow will monitor the panes currently displayed for changes
+to the standard gadgets. In particular, the gadget monitors :</p>
+
+<p>
+<list>
+<item><p>OptionButton_StateChanged</p></item>
+<item><p>RadioButton_StateChanged</p></item>
+<item><p>WritableField_ValueChanged</p></item>
+<item><p>Slider_ValueChanged</p></item>
+<item><p>Adjuster_Clicked</p></item>
+<item><p>NumberRange_ValueChanged</p></item>
+<item><p>StringSet_ValueChanged</p></item>
+<item><p>ColourSwatch_ColourChanged</p></item>
+</list>
+<fixme>Link these with references</fixme>
+</p>
+
+<p>
+Any of these events occurring on a pane Window will cause the OptionsWindow
+to be marked as modified automatically. This behaviour can be disabled
+through a flag in the OptionsWindow template. Any changes which are caused
+by events outside these, for example through a FontDBox object attached to
+the window, will need to be notified a method call to the OptionsWindow.
+</p>
+</subsection>
+
+<subsection title="Pane Window objects">
+<p>Each Pane window must conform to a number of very simple requirements :
+</p>
+  
+<p>
+<list type="unordered">
+
+<item><p>It must have a window foreground of 'transparent'.<br />
+This will cause the title bar and window borders to be removed.</p></item>
+
+<item><p>It must have a title which will be used on the radio icon to select
+the window.<br />
+Although the title is not used for the Window, it will still be present and
+its use on the radio icon allows the radio icons to be internationalised
+easily.</p>
+</item>
+
+<item><p>The extent of the window must cover the extent used by the options
+within the window.<br />
+The window will automatically be extended to fill the space required
+by the largest of the panes, and the main window's options and buttons.
+</p></item>
+
+<item><p>As a consequence of the above, there must be no gadgets outside the
+apparent visible area of the Window as these may be exposed when the window
+is extended.</p></item>
+    
+<item><p>It is recommended that the title be one or two words, preferably
+including a noun describing the area to be configured.</p></item>
+</list>
+</p>
+
+<p>
+Other than this, the Window can contain any gadget which it requires.</p>
+</subsection>
+
+<subsection title="Action Buttons">
+<p>The buttons displayed on the OptionsWindow object can be controlled
+through the flags given in the Object template. The options which can be
+used on the OptionsWindow are :</p>
+
+<p>
+<list>
+<item><p>Set</p></item>
+<item><p>Cancel</p></item>
+<item><p>Save</p></item>
+<item><p>Default</p></item>
+</list>
+</p>
+
+<p>
+These are independant of one another, but certain combinations make little
+sense. In particular, no buttons or just a Default button will actually
+cause the Cancel button to be included on the dialogue. Without this Cancel
+button, the window would not be closable by the user.
+</p>
+
+</subsection>
+
+<subsection title="User events">
+<p>
+The OptionsWindow is intended to use modular configuration panes. That is,
+the changes to panes are requested, or applied individually. This should
+reduce the processing required to just those panes which have been accessed
+by the user.</p>
+
+<p>
+A typical example of this is that when showing an OptionsWindow for the
+first time, the first pane will be selected. As the pane is selected, an
+event will be sent to the application to request that it update the pane
+with the current settings. The application should only update that single
+pane. When a new pane is selected (either by the user or through a method
+call), an event will be delivered for that pane.</p>
+
+<p>
+When the user selects 'Set', the application will be sent a number of
+events to read the settings from them. This will only occur for the panes
+which have been made visible. Once set, all the panes will be marked as
+not having been seen and will not be reset.</p>
+
+<p>
+When the 'Default' button is pressed, all the panes must be updated with
+the default settings, and events will be sent to the application to that
+effect.</p>
+
+<p>
+The 'Save' operation is a combination of the 'Set' operation for each
+pane which had been visible and a save event for the entire settings; that
+is, the application will receive a number of events to read the settings,
+followed by a save event.</p>
+
+<p>
+At any time, the dialogue may be closed by the user, either by pressing
+the 'Save', 'Set' or 'Cancel' buttons, or by the relevant key press.
+This will result in an event being delivered to inform the application
+that the dialogue has been completed. No operation should be performed
+on the configuration on receipt of this event, but any associated objects
+should be deleted or at least hidden by the application.</p>
+
+</subsection>
+
+<subsection title="OptionsWindow templates">
+
+<p>The layout of a OptionsWindow template is shown below. Fields which have
+types MsgReference and StringReference are those which will require
+relocation when they are loaded from a resource file. If the template is
+being constructed in memory, then these fields should be real pointers (i.e.
+they do not require relocation).</p>
+
+<p>For more details on relocation, see <reference href="?SUPPORT310.HTML#65428">Resource File Formats</reference>.</p>
+
+<value-table head-number="Field" head-name="Size in bytes" head-value="Type">
+<value number="flags" name="4">word</value>
+<value number="title" name="4">MsgReference </value>
+<value number="windowlist" name="4">StringReference</value>
+</value-table>
+</subsection>
+</section>
+
+<subsection title="OptionsWindow Wimp event handling">
+
+<value-table head-number="Wimp event" head-value="Action">
+<value number="Open Window">Show the dialogue box</value>
+<value number="Key Click">if Escape, then cancel this dialogue<br />                                   if Return pressed, perform the default action.
+                          </value>
+<value number="User Message">Events as listed in <reference type="subsection" name="Modification checks" /><br />
+Mark the object as modified<br />
+ActionButton_Selected<br />
+Perform the relevant operation for the button pressed<br />
+RadioButton_StateChanged<br />
+Change the pane displayed.
+</value>
+</value-table>
+
+</subsection>
+
+
+<section title="Toolbox methods">
+
+<p>The following methods are all invoked by calling SWI Toolbox_ObjectMiscOp with:</p>
+
+<value-table>
+<value number="R0">holding a flags word</value>
+<value number="R1">being a OptionsWindow Dialogue object id</value>
+<value number="R2">being the method code which distinguishes this method</value>
+<value number="R3-R9">potentially holding method-specific data</value>
+</value-table>
+
+<tboxmethod-definition name="OptionsWindow_GetWindowID"
+                        number="0"
+                        description="Read the Window ObjectId used for this object"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">0</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">window object id for this OptionsWindow object</register-use>
+</exit>
+
+<use>
+
+<p>This method returns the id of the underlying Window object used to
+implement this OptionsWindow object.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_get_window_id ( unsigned int flags, ObjectId optionswindow, ObjectId *window );<br /></code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_AddPane"
+                        number="1"
+                        description="Add a new pane to the OptionsWindow object"
+                >
+
+<entry>
+
+<register-use number="0">flags (reserved, must be 0)</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">1</register-use>
+<register-use number="3">new component id for pane</register-use>
+<register-use number="4">Window object id for new pane</register-use>
+</entry>
+
+<exit>
+
+<register-use number="1-R9" state="preserved" />
+
+</exit>
+
+<use>
+
+<p>This method add a new pane to the list of panes used by the
+OptionsWindow. If this is the first pane and the OptionsWindow is shown, the
+pane will be selected.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_add_pane ( unsigned int flags,<br />
+                                                 ObjectId optionswindow,<br />
+                                                 ComponentId new_componentid,<br />
+                                                 ObjectId new_panewindow<br />
+                                               );
+</code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_RemovePane"
+                        number="2"
+                        description="Remove an existing Pane from the OptionsWindow"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">2</register-use>
+<register-use number="3">component id of the pane to remove</register-use>
+</entry>
+
+<exit>
+<register-use number="1-R9" state="preserved" />
+</exit>
+
+<use>
+
+<p>This method removes a pane from those controlled by the OptionsWindow. If
+the specified pane is currently selected, the OptionsWindow will revert to
+the first pane.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_remove_pane ( unsigned int flags,<br />
+                                                    ObjectId optionswindow,<br />
+                                                    ComponentId component<br />
+                                                  );<br />
+</code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_SelectPane"
+                        number="3"
+                        description="Selects a pane of the OptionsWindow object for display"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">3</register-use>
+<register-use number="3">component id of the pane to display</register-use>
+</entry>
+
+<exit>
+
+<register-use number="1-R9" state="preserved" />
+
+</exit>
+
+<use>
+
+<p>This method displays a given pane.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_select_pane ( unsigned int flags,<br />
+                                                    ObjectId optionswindow,<br />
+                                                    ComponentId component<br />
+                                                  );
+</code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_SetModified"
+                        number="4"
+                        description="Change the modification details for the OptionsWindow object"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">1</register-use>
+<register-use number="3">value</register-use>
+</entry>
+
+<exit>
+
+<register-use number="1-R9" state="preserved" />
+
+</exit>
+
+<use>
+
+<p>This method sets whether the options have been modified or not. If the
+value passed in R3 is 0, this indicates that the options is not modified;
+any other value in R3 means the options have been modified.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_set_modified ( unsigned int flags, ObjectId optionswindow, int modified );<br /></code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_GetModified"
+                        number="5"
+                        description="Read the modification details for the OptionsWindow object"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">2</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">modified state (0 = unmodified;  non-0 = modified)
+</register-use>
+
+</exit>
+
+<use>
+
+<p>This method returns whether the options have been modified or not.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_get_modified ( unsigned int flags, ObjectId optionswindow, int *modified );<br /></code>
+</declaration>
+</tboxmethod-definition>
+
+<tboxmethod-definition name="OptionsWindow_EnumeratePanes"
+                        number="6"
+                        description="Enumerate the panes used by the OptionsWindow"
+                >
+
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">OptionsWindow object id</register-use>
+<register-use number="2">2</register-use>
+<register-use number="3">last pane component id, or -1 initially</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">pane Window object id if R3 contains a valid
+component id </register-use>
+<register-use number="3">component id of this pane, or -1 if no more
+components</register-use>
+
+</exit>
+
+<use>
+
+<p>This method enumerates the panes attached to the OptionsWindow.</p>
+
+</use>
+
+<declaration type="prototype">
+
+<code type="c">
+extern _kernel_oserror *optionswindow_enumerate_panes ( unsigned int flags,<br />
+                                                        ObjectId optionswindow,<br />
+                                                        ComponentId last_component,<br />
+                                                        ObjectId *window,<br />
+                                                        ComponentId *component<br />
+                                                      );
+</code>
+</declaration>
+</tboxmethod-definition>
+</section>
+
+<section title="Toolbox events">
+
+<p>The OptionsWindow object generates the following Toolbox events:</p>
+
+<tboxmessage-definition name="OptionsWindow_DialogueCompleted"
+                         number="?0"
+                         description="Notification that a OptionsWindow object is no longer visible"
+                >
+
+<message-table>
+<message offset="8">&hex;?0</message>
+<message offset="12">flags (none yet defined)</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised after the OptionsWindow object has been
+hidden, either by the user Select clicking on the buttons, or the equivilent
+keyboard operation. It allows the client to tidy up its own state associated
+with this dialogue.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+<p>typedef struct<br />
+{<br />
+ ToolboxEventHeader hdr;<br />
+} OptionsWindowDialogueCompletedEvent;<br />
+</p><br /></code>
+</declaration>
+</tboxmessage-definition>
+
+<tboxmessage-definition name="OptionsWindow_FillInPaneDefault"
+                         number="?1"
+                         description="Request that the application fill in a pane with the default settings"
+                >
+
+<message-table>
+<message offset="8">&hex;?1</message>
+<message offset="12">flags (none yet defined)</message>
+<message offset="16">pane object id</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised to request that the application fill in
+a pane with the default settings. The application's Id Block will be filled
+in with the OptionsWindow object id and pane component number.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+<p>typedef struct<br />
+{<br />
+ ToolboxEventHeader hdr;<br />
+ ObjectId pane_window;<br />
+} OptionsWindowFillInPaneEvent;<br />
+</p></code>
+</declaration>
+</tboxmessage-definition>
+
+<tboxmessage-definition name="OptionsWindow_FillInPaneCurrent"
+                         number="?2"
+                         description="Request that the application fill in a pane with the current settings"
+                >
+
+<message-table>
+<message offset="8">&hex;?2</message>
+<message offset="12">flags (none yet defined)</message>
+<message offset="16">pane object id</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised to request that the application fill in
+a pane with the current settings. The application's Id Block will be filled
+in with the OptionsWindow object id and pane component number.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+<p>typedef struct<br />
+{<br />
+ ToolboxEventHeader hdr;<br />
+ ObjectId pane_window;<br />
+} OptionsWindowFillInPaneEvent;<br />
+</p></code>
+</declaration>
+</tboxmessage-definition>
+
+<tboxmessage-definition name="OptionsWindow_ConfigurePane"
+                         number="?3"
+                         description="Request that the application read the settings from an OptionsWindow pane"
+                >
+
+<message-table>
+<message offset="8">&hex;?3</message>
+<message offset="12">flags (none yet defined)</message>
+<message offset="16">pane object id</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised to request that the application read the
+details from a pane and apply them to the current settings. The
+application's Id Block will be filled in with the OptionsWindow object id
+and pane component number.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+<p>typedef struct<br />
+{<br />
+ ToolboxEventHeader hdr;<br />
+ ObjectId pane_window;<br />
+} OptionsWindowConfigurePaneEvent;<br />
+</p></code>
+</declaration>
+</tboxmessage-definition>
+
+<tboxmessage-definition name="OptionsWindow_Save"
+                         number="?4"
+                         description="Request that the application save all settings"
+                >
+
+<message-table>
+<message offset="8">&hex;?4</message>
+<message offset="12">flags (none yet defined)</message>
+</message-table>
+
+<use>
+
+<p>This Toolbox event is raised to request that the application save its
+settings. The application's Id Block will be filled in with the
+OptionsWindow object id.</p>
+
+</use>
+
+<declaration type="structure">
+
+<code type="c">
+<p>typedef struct<br />
+{<br />
+ ToolboxEventHeader hdr;<br />
+} OptionsWindowSaveEvent;<br />
+</p></code>
+</declaration>
+</tboxmessage-definition>
+
+
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" date="07 Jun 2004" title="First version" />
+ </history>
+</meta>
+</riscos-prm>

@@ -1,0 +1,449 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+<chapter title="SharedSoundBuffer">
+<section title="Introduction and Overview">
+<p>SharedSoundBuffer is a module for playing raw data using the SharedSound
+module.  It requires SharedSound version 1.0 or later.</p>
+
+<p>The module has been designed so it is easy to play sounds from any
+application.</p>
+
+</section>
+<!--
+<section title="Terminology">
+<p>MPEG audio data is used as a generic term, covering MPEG 1/2/2.5 audio
+data, using layers I, II, or III.</p>
+<p>The term VBR is used to mean 'Variable Bit-Rate'. VBR data is data which
+contains non-constant bitrate through the track. It is still assumed that
+the MPEG version and layer remain constant.</p>
+
+</section>
+-->
+<section title="Technical Details">
+<p>In order to play audio data, SharedSoundBuffer is called in the
+background by SharedSound. This allows the module to continue in, and out of
+the desktop.  Data may be passed during callbacks, allowing the system as
+a whole to run independent on any foreground application.</p>
+
+<p>When streaming, an application must feed data to SharedSoundBuffer in a
+timely fashion. Data is supplied as arbitrary sized blocks, which are
+consulted in the order in which they were presented to the module.  If
+the player runs out of data it will pause until some more data is
+supplied.  Blocks are copied by SharedSoundBuffer, so they must only be
+kept for the duration of the call to AddBlock.</p>
+
+<p>When the end of a buffer is reached, the player will continue seamlessly
+to the next buffer. The data should be frame-aligned, i.e. each block
+supplied should be a multiple of four bytes, but it is not necessary to
+ensure that they are a multiple of the SharedSound fill buffer.</p>
+
+<p>A base handle is provided, this is always present and has a stream
+handle of zero.  This does not need to be opened, and cannot be closed,
+and should be used by programs which only output short, atomic samples. 
+It should not be used by programs which multi-task between adding blocks,
+otherwise other programs may intersperse their data in with it.  It
+should also not be used by background routines for the same reasons.</p>
+
+</section>
+
+<section title="SWI calls">
+<swi-definition name="SharedSoundBuffer_OpenStream"
+                number="55FC0"
+                description="Opens a stream"
+                irqs="undefined"
+                fiqs="undefined"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">flags :
+  <bitfield-table>
+   <bit number="0-31">Reserved, must be 0.</bit>
+  </bitfield-table>
+ </register-use>
+ <register-use number="1">pointer to name for stream</register-use>
+</entry>
+<exit>
+ <register-use number="0">handle of created stream</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to open a stream prior to passing blocks.  The handle
+returned is a 32 bit opaque word, which will never be zero.  The handle zero
+is reserved for the base handle.</p>
+
+</use>
+
+<related>
+<!--<reference type="command" name="AMPlay" />-->
+<reference type="swi" name="SharedSoundBuffer_CloseStream" />
+<reference type="swi" name="SharedSoundBuffer_AddBlock" />
+<!--<reference type="swi" name="SharedSoundBuffer_Control" reason="4" />-->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_CloseStream"
+                number="55FC1"
+                description="Closes and stops a stream immediately"
+                irqs="undefined"
+                fiqs="undefined"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+</entry>
+
+<use>
+<p>This SWI is used to close a stream, stopping playback and freeing any
+memory associated with it immediately.  This is in contrast with <reference
+type="swi" name="SharedSoundBuffer_StreamEnd" />, which continues
+playback until all data has drained.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="SharedSoundBuffer_OpenStream" />
+<reference type="swi" name="SharedSoundBuffer_StreamEnd" />
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_AddBlock"
+                number="55FC2"
+                description="Adds a block to a stream's queue"
+                irqs="undefined"
+                fiqs="undefined"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">pointer to block</register-use>
+ <register-use number="2">block size, in bytes</register-use>
+</entry>
+
+<use>
+<p>This SWI is used to add a block to be queued.</p>
+
+<p>If the queue is full, the error <reference type="error" 
+name="AudioQueueFull" /> is returned and the block is not added.  It will
+also clear the appropriate bit in the current poll word.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="SharedSoundBuffer_OpenStream" />
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_PollWord"
+                number="55FC3"
+                description="Sets up the buffer pollword"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">flags :
+  <bitfield-table>
+   <bit number="0">
+     <value-table head-number="Value" head-value="Effect">
+      <value number="0">Supply the poll word</value>
+      <value number="1">Use the poll word specified</value>
+     </value-table>
+   </bit>
+   <bit number="1-31">Reserved, must be 0.</bit>
+  </bitfield-table>
+ </register-use>
+ <register-use number="1">if bit 0 of R0 set:<br />
+                          pointer to word</register-use>
+ <register-use number="2">if bit 0 of R0 set:<br />
+                          bit number to set</register-use>
+</entry>
+<exit>
+ <register-use number="0">if bit 0 of R0 clear on entry:<br />
+                          pointer to opaque poll word</register-use>
+</exit>
+
+<use>
+<p>This SWI sets up the poll word used by the specified stream.  The poll
+word bit will be set when blocks are removed from the buffer, it will be
+cleared when a block cannot be fitted into the buffer.  If the poll word
+is supplied by the module, it should be treated as an opaque word, and
+only compared with zero.</p>
+<p>The poll word can be changed as often as is necessary.</p>
+
+</use>
+
+<!--<related>
+<reference type="command" name="AMLocate" />-->
+<!-- <reference type="swi" name="SharedSoundBuffer_Play" /> -->
+<!-- <reference type="vector" name="bingleV" /> -->
+<!--</related>-->
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_Volume"
+                number="55FC4"
+                description="Set the volume of output"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">Volume, as two unsigned 16 bit values packed into a 32 bit word<br />
+                          &hex;LLLLRRRR</register-use>
+</entry>
+
+<use>
+<p>This call sets the volume of the stream.</p>
+
+</use>
+
+<related>
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_SampleRate"
+                number="55FC5"
+                description="Set the sample rate"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">new sample rate in 1024th Hz steps</register-use>
+</entry>
+
+<use>
+<p>This SWI is used to set the sample rate of the data being played.</p>
+
+</use>
+
+<related>
+<!-- <reference type="command" name="Com" /> -->
+<!-- <reference type="swi" name="SharedSoundBuffer_FileInfo" /> -->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_ReturnSSHandle"
+                number="55FC6"
+                description="Return the internal SharedSound handle"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+</entry>
+
+<exit>
+ <register-use number="0">current SharedSound handle</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to read the low-level SharedSound handle currently
+in use by the stream.  This is a dynamic value, i.e. it may change at any
+time throughout the lifetime of a stream.  Wherever possible you must use the
+defined SharedSoundBuffer calls.</p>
+
+</use>
+
+<related>
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_SetBuffer"
+                number="55FC7"
+                description="Set the stream buffer limit"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">buffer limit in bytes</register-use>
+</entry>
+
+<use>
+<p>This SWI is used to set the maximum amount of data which may be
+buffered for that stream at any time.</p>
+
+</use>
+
+<related>
+<!-- <reference type="command" name="Com" /> -->
+<reference type="swi" name="SharedSoundBuffer_BufferStats" />
+<!--<reference type="sysvar" name="SharedSoundBuffer$Buffer$*" />-->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_BufferStats"
+                number="52E08"
+                description="Find out information about the buffer"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+</entry>
+
+<exit>
+ <register-use number="0">number of unplayed bytes</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to find out how many bytes are left unplayed in the
+buffer.</p>
+
+</use>
+
+<related>
+<!-- <reference type="command" name="Com" /> -->
+<reference type="swi" name="SharedSoundBuffer_SetBuffer" />
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_Pause"
+                number="55FC9"
+                description="Pauses playback"
+                irqs="undefined"
+                fiqs="undefined"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+ <register-use number="1">flags :
+  <bitfield-table>
+   <bit number="0" name="Resume">
+    Resumes playback.</bit>
+   <bit number="1-31">Reserved, must be 0.</bit>
+  </bitfield-table>
+ </register-use>
+</entry>
+
+<use>
+<p>This SWI is used to pause or resume playback.  While paused, sound
+output is silenced, but blocks will be retained and may be added, up to the
+usual limits.</p>
+
+</use>
+
+<related>
+<!--<reference type="swi" name="SharedSoundBuffer_Stop" />-->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+<swi-definition name="SharedSoundBuffer_StreamEnd"
+                number="55FCA"
+                description="Closes a stream"
+                irqs="undefined"
+                fiqs="undefined"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">stream handle</register-use>
+</entry>
+
+<use>
+<p>This SWI is used to close a stream, allowing output to continue and
+retaining memory buffers until they are finished.  The stream handle must not
+be used after this has been called.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="SharedSoundBuffer_CloseStream" />
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</swi-definition>
+
+
+</section>
+
+<section title="Errors">
+<error-definition name="AudioQueueFull"
+                  number="81A140"
+                  description="Audio queue full" />
+
+
+<use>
+<p>This error is returned by <reference type="swi"
+name="SharedSoundBuffer_AddBlock" /> when the block passed would cause
+there to be more data buffered than the threshold set with <reference
+type="swi" name="SharedSoundBuffer_SetBuffer" />.  The block passed is
+not added to the queue.</p>
+
+</use>
+
+</section>
+
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="John Duffell" address="jd@eh.org" />
+ </maintainer>
+ <disclaimer>
+  <p>
+  This document is, to the best of my knowledge, a correct representation
+  of the API of SharedSoundBuffer.
+  </p>
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="JD" title="First XML monitored version">
+   <change>First XML version of the document.</change>
+  </revision>
+ </history>
+
+ <related>
+  <!-- no related documents as yet -->
+ </related>
+</meta>
+</riscos-prm>

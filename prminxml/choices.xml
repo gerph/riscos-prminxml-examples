@@ -1,0 +1,269 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN" 
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+<chapter title="Configuration storage">
+<section title="Introduction and Overview">
+<p>Application and system configuration is held in a group of central
+repositories. Applications may be shared between a number of different
+users, and therefore their configurations should not be locked to that
+application. As a result of this, it is possible to have a hierarchy of
+configuration details which allows (in the most common case) the application
+to use system defaults, or user specific settings.</p>
+
+</section>
+
+<section title="Technical Details">
+<p>Two system variables are used in the configuration of applications -
+<reference type="sysvar" name="Choices$Path" /> and
+<reference type="sysvar" name="Choices$Write" />. Applications should not
+attempt to process <sysvar>Choices$Path</sysvar> directly, but should use
+it only in via the filename <filename>Choices:</filename>.</p>
+
+<p>Applications must read from <filename>Choices:*</filename> and write to
+<filename><sysvar>Choices$Write</sysvar>.*</filename>. Reading and writing
+should not be performed simultaneously, as these entries refer to the same
+file. Applications should never read from
+<filename><sysvar>Choices$Write</sysvar>.*</filename>, or write to
+<filename>Choices:*</filename>.</p>
+
+<p>Applications may assume that
+<filename><sysvar>Choices$Write</sysvar></filename> exists and is writable.
+No other part of the <filename><sysvar>Choices$Write</sysvar></filename> or 
+<filename>Choices:</filename> may be assumed to exist.</p>
+
+<subsection title="Naming conventions">
+<p>The generic form of naming of files within the Choices structure is :</p>
+<p>
+<filename><userreplace>application</userreplace>.<userreplace>file</userreplace></filename>
+</p>
+
+<p>Any number of files may be stored within the application specific
+directory of the Choices structure, but authors should be aware that the
+filing system on which the choices are stored may be limited to 77 files per
+directory, or 10 character filenames as determined by the file system
+itself. Whilst authors should not worry unduly about this, it should be
+a factor in naming such files.</p>
+
+<p>Whilst it is possible to store files without using a sub-directory - ie,
+just storing a file in the hierarchy with the same name as that of the
+application, this is not recommended. Such use precludes the additional of
+other configuration files for that application, should future versions
+require them.</p>
+
+<category title="Grouping by author">
+<p>An alternative form of naming files which may be used is :</p>
+<p>
+<filename><userreplace>author</userreplace>.<userreplace>application</userreplace>.<userreplace>file</userreplace></filename>
+</p>
+
+<p>In this case, the <userreplace>author</userreplace> should be the well
+known name of the group issuing the product, such as
+<filename>MegaCorp</filename>, or <filename>JBloggs</filename>. As with the
+files themselves, the filesystems constraints on naming should be considered
+when selecting such names.</p>
+</category>
+
+<category title="Grouping by category">
+<p>A more wide spread and preferred form of naming files which may be used
+is that of grouping by the category into which the application falls :</p>
+<p>
+<filename><userreplace>category</userreplace>.<userreplace>application</userreplace>.<userreplace>file</userreplace></filename>
+</p>
+<p>The <userreplace>category</userreplace> name should be chosen to avoid
+clashes between it and application names.</p>
+
+<p>Categories currently known to be in use - this is in no way an exhaustive list - include :</p>
+
+<p>
+<value-table head-number="Category" head-value="Contents">
+ <value number="!ZapUser">Zap modules and resources for the user live here.
+                     </value>
+
+ <value number="Boot">Resources relating to the booting of the machine
+                     live here.</value>
+
+ <value number="Audio">Audio applications should store their details here.
+                     </value>
+
+ <value number="IRC">IRC related applications should store their details
+                     here.</value>
+
+ <value number="ScrSavers">RISC OS 4-style screen savers should store their
+                     details here.</value>
+
+ <value number="USB">USB devices should store their details here.</value>
+
+ <value number="WWW">World Wide Web related applications should store their
+                     details here.</value>
+</value-table>
+</p>
+
+<p>Authors wishing to create new categories should consider whether this
+is in fact the best course of action. Consultation with other developers
+working on similar projects is recommended.</p>
+
+</category>
+
+</subsection>
+
+<subsection title="Name registration">
+<p>When you register an application name (and have had it confirmed), this
+also includes an allocation in the Choices hierarchy of the same
+name. This should be borne in mind when naming applications.</p>
+
+<p>If a new category name is to be used, it should also be registered, as
+should author name groups.</p>
+
+</subsection>
+
+<subsection title="Configuration file contents">
+<p>Whilst it is recommended that configuration files contain textual
+configuration data, it is entirely the choice of the application what data
+it should store.</p>
+
+<subsubsection title="Robustness">
+<p>No application should ever crash because of a poorly formatted
+configuration file. Loading an entire file into a structure (in C or
+Assembler) or fixed length buffer is likely to cause problems if the file is
+corrupt in any way. Reading textual strings in BASIC should be checked for
+overly long strings. Non-existent tags (in tagged files) should be given
+default values. It is recommended that if a corrupt configuration file is
+identified it be ignored and the defaults used.</p>
+</subsubsection>
+</subsection>
+
+<subsection title="When Choices should be written">
+<p>In general, applications should not write choices unless the user
+explicitly requests this. This is not practical in some situations,
+particularly where the choices require a reload to take effect. Care should
+be taken to ensure as far as is possible, that the configuration presented
+to the user is preserved fully within the files written.</p>
+
+<p>In particular applications should not write choices when they quit.
+Doing so may cause invalid choices to be written, or (in the case of
+defaulted choices) overwrite the user selected choices. The only exception
+to this is where the user has chosen to write choices on application
+quit.</p>
+</subsection>
+
+<subsection title="RISC OS 3.1 and earlier">
+<p>Previous versions of this document dealt with support for systems where
+<sysvar>Choices$*</sysvar> were unset. Such system are should no longer be
+supported. It is strongly recommended that applications fault the lack of
+<sysvar>Choices$Write</sysvar> in their <filename>!Run</filename> file.</p>
+
+<p>An application, <filename>!Choices</filename> has been provided for
+systems without a suitable boot sequence, should this be necessary. In
+general, support for such systems should be discontinued.</p>
+
+</subsection>
+
+</section>
+
+<section title="System variables">
+<sysvar-definition name="Choices$Dir"
+                   description="Obsolete description of the Choices hierarchy">
+<use>
+<p>This variable contains a reference to the highest level (usually the
+users) configuration directory. It is now obsolete and should not be used
+by any applications.</p>
+
+</use>
+
+<related>
+<reference type="sysvar" name="Choices$Write" />
+<reference type="sysvar" name="Choices$Path" />
+</related>
+
+</sysvar-definition>
+
+
+<sysvar-definition name="Choices$Write"
+                   description="Directory into which application configuration details should be written">
+<use>
+<p>This variable contains the name of the directory into which configuration
+details should be written. It is used to write out user-specific
+configuration details, which will override any others which may have been given in <reference type="sysvar" name="Choices$Path" />.</p>
+
+<p>Applications should never use the directory given in this variable for
+any form of read operation. The directory specified may be assumed to exist
+and be writable.</p>
+
+</use>
+
+<related>
+<reference type="sysvar" name="Choices$Path" />
+</related>
+</sysvar-definition>
+
+
+<sysvar-definition name="Choices$Path"
+                   description="Comma separated list of paths to scan for configuration details">
+<use>
+<p>This variable contains a comma separated list of paths which will be
+searched to locate configuration details. This list will be searched in
+order from beginning to end until a match is found. It is usual for the
+first entry in <sysvar>Choices$Path</sysvar> to be
+<filename><sysvar>Choices$Write</sysvar>.</filename>, which ensures
+that the user configuration is searched after any other system, or
+administrator set configuration. Applications should always access the
+choices hierarchy via <filename>Choices:</filename> rather than attempting
+to expand this variable themselves.</p>
+
+<p>This variable should never be used directly by applications. The path
+<filename>Choices:</filename> should never be used for write operations.</p>
+
+</use>
+
+<related>
+<reference type="sysvar" name="Choices$Write" />
+</related>
+</sysvar-definition>
+
+</section>
+
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="Justin Fletcher" address="gerph@innocent.com" />
+ </maintainer>
+ <disclaimer>
+  <p>This document is based on my own experiences as a developer and is not
+     an officially sanctioned document. It describes what I believe to be
+     the Best Common Practices for applications using Choices.</p>
+ </disclaimer>
+
+ <history>
+  <revision number="0.00" author="JRF" date="04 Jun 1998">
+    Released to various people via IRC and email for comments.
+    Sent to Dave Walker for confirmation that I'm not talking
+    rubbish.
+  </revision>
+
+  <revision number="1.00" author="JRF" date="29 Jun 1998">
+    Suggestions, comments and complaints added to the document.
+    Reformatted into sections.
+  </revision>
+
+  <revision number="1.01" author="JRF" date="08 Jan 1999">
+    Reformatted as HTML for the 'info' section of my website.
+  </revision>
+  
+  <revision number="2.00" author="JRF" date="09 Jan 2002">
+    Re-written from scratch, using information in the original.
+    Support for RISC OS 3.1 is no longer given and is strongly
+    discouraged.
+    We no longer provide examples; applications programmers
+    capable of using files should be able to construct their
+    own code. The removal of support for RISC OS 3.1 makes
+    such examples redundant anyhow.
+    This documentation is based on the PRMinXML structures, rather
+    than HSC.
+  </revision>
+ </history>
+</meta>
+</riscos-prm>

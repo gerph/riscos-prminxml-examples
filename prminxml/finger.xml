@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN" 
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+<chapter title="Finger">
+<section title="Introduction and Overview">
+<p>Finger is used to request information about a remote user or system using
+the Finger protocol.</p>
+
+</section>
+
+<section title="*Commands">
+<command-definition name="Finger"
+                    description="Request information on remote user">
+<syntax>
+ <optional>
+  <switch name="help" />
+ </optional>
+ <optional alternates="true">
+  <switch name="long" />
+  <switch name="short" />
+ </optional>
+ <optional alternates="true">
+  <text><userreplace>user</userreplace>@<userreplace>host</userreplace></text>
+  <userreplace>host</userreplace>
+ </optional>
+</syntax>
+
+<parameter switch="help">Display help on the command</parameter>
+<parameter switch="short">Display short information about the user</parameter>
+<parameter switch="long">Display long information about the user</parameter>
+
+
+<use>
+<p>Finger is used to request information about a user on a remote machine
+through the use of the Finger protocol.</p>
+
+</use>
+
+<example>
+<command>*Finger bob@builder.com</command>
+</example>
+
+<related>
+<!-- <reference type="command" name="Com" /> -->
+<!-- <reference type="swi" name="thingy" /> -->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</command-definition>
+</section>
+
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

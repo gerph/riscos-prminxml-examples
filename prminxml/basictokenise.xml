@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+<chapter title="BASICTokenise">
+<section title="Introduction and Overview">
+<p>BASIC files are tokenised when stored as file type BASIC (&hex;FFB). Usually the tokenisation process it performed by the BASIC module. However, this isn't always possible - for example, if the process is being run on a non-RISC OS system. The <command>*BASICTokenise</command> tool can be used to convert untokenised BASIC Text (filetype &hex;FD1) to Tokenised BASIC.</p>
+
+</section>
+
+<section title="*Commands">
+<command-definition name="BASICTokenise"
+                    description="Convert a BASIC Text file to tokenised BASIC file">
+<syntax>
+ <userreplace>input</userreplace>
+ <userreplace>output</userreplace>
+</syntax>
+
+<parameter name="input">filename of the text file to read</parameter>
+<parameter name="output">filename of the tokenised BASIC file to write to</parameter>
+
+
+<use>
+<p>This command is used to tokenise a textual BASIC program.
+<command>*BASICTokenise</command> will process the text file to produce a BASIC
+file.</p>
+
+<p>The tool is only capable of converting simple BASIC code, without line number references.</p>
+
+</use>
+
+<example>
+<command>*BASICTokenise Source !RunImage</command>
+</example>
+
+<related>
+<!-- <reference type="command" name="BASIC" href='programmer/BASIC'/> -->
+</related>
+
+</command-definition>
+</section>
+
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="Charles Ferguson" address="gerph@gerph.org" />
+ </maintainer>
+ <disclaimer>
+    &copy; gerph, 2020.
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="Gerph" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>
