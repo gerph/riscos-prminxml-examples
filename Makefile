@@ -14,7 +14,7 @@ DOCSRC     = prminxml.fontmap/xml \
              prminxml.ssb/xml \
              prminxml.basictokenise/xml
 
-include _Docs
+include Documentation
 
 #---------------------------------------------------------------------------
 # Dynamic dependencies:

@@ -11,4 +11,8 @@ resources:
     version: latest
     path: $ROBUILD_DIR/Env
 
-#exports:
+exports:
+  docs/prminxml:
+    phases: install
+    newer: true
+    path: $INSTALL_DIR/Library/docs/
