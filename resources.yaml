@@ -12,7 +12,7 @@ resources:
     path: $ROBUILD_DIR/Env
 
 exports:
-  docs/prminxml:
+  docs/prminxml-examples:
     phases: install
     newer: true
     path: $INSTALL_DIR/Library/docs/
