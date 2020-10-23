@@ -27,7 +27,7 @@ variables:
 #### Documentation ####
 docs-riscos:
   <<: *common
-  stage: export
+  stage: docs
   script:
     - ci/build.sh install --upload
 
