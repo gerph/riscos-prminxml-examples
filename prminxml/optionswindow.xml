@@ -109,6 +109,7 @@ the object.</p>
 
 <p>A OptionsWindow object has the following attributes which are specified in its object template and can be manipulated at run-time by the client application:</p>
 
+<p>
 <value-table head-number="Attributes" head-value="Description">
 <value number="flags">flags for this component
  <bitfield-table>
@@ -126,6 +127,7 @@ the object.</p>
 (0 means use default title)</value>
 <value number="windowlist">this is a comma-separated string which lists the names of the panes which should be automatically attached to the OptionsWindow.</value>
 </value-table>
+</p>
 
 </subsection>
 <subsection title="Manipulating a OptionsWindow object">
@@ -146,6 +148,7 @@ panes from being deleted with the OptionsWindow object.</p>
 
 <p>When an OptionsWindow object is displayed on the screen using SWI Toolbox_ShowObject it has the following behaviour:</p>
 
+<p>
 <value-table head-number="Show type" head-value="Position">
 <value number="0 (default)">the underlying window is shown centred in the screen.</value>
 <value number="1 (full spec)">fully specified window position in R3:
@@ -161,6 +164,7 @@ panes from being deleted with the OptionsWindow object.</p>
  </offset-table>
 </value>
 </value-table>
+</p>
 
 </subsubsection>
 
@@ -336,16 +340,19 @@ they do not require relocation).</p>
 
 <p>For more details on relocation, see <reference href="?SUPPORT310.HTML#65428">Resource File Formats</reference>.</p>
 
+<p>
 <value-table head-number="Field" head-name="Size in bytes" head-value="Type">
 <value number="flags" name="4">word</value>
 <value number="title" name="4">MsgReference </value>
 <value number="windowlist" name="4">StringReference</value>
 </value-table>
+</p>
+
 </subsection>
-</section>
 
 <subsection title="OptionsWindow Wimp event handling">
 
+<p>
 <value-table head-number="Wimp event" head-value="Action">
 <value number="Open Window">Show the dialogue box</value>
 <value number="Key Click">if Escape, then cancel this dialogue<br />                                   if Return pressed, perform the default action.
@@ -358,20 +365,24 @@ RadioButton_StateChanged<br />
 Change the pane displayed.
 </value>
 </value-table>
+</p>
 
 </subsection>
+</section>
 
 
 <section title="Toolbox methods">
 
 <p>The following methods are all invoked by calling SWI Toolbox_ObjectMiscOp with:</p>
 
+<p>
 <value-table>
 <value number="R0">holding a flags word</value>
 <value number="R1">being a OptionsWindow Dialogue object id</value>
 <value number="R2">being the method code which distinguishes this method</value>
 <value number="R3-R9">potentially holding method-specific data</value>
 </value-table>
+</p>
 
 <tboxmethod-definition name="OptionsWindow_GetWindowID"
                         number="0"
@@ -629,12 +640,12 @@ extern _kernel_oserror *optionswindow_enumerate_panes ( unsigned int flags,<br /
 <p>The OptionsWindow object generates the following Toolbox events:</p>
 
 <tboxmessage-definition name="OptionsWindow_DialogueCompleted"
-                         number="?0"
+                         number="100280"
                          description="Notification that a OptionsWindow object is no longer visible"
                 >
 
 <message-table>
-<message offset="8">&hex;?0</message>
+<message offset="8">&hex;100280</message>
 <message offset="12">flags (none yet defined)</message>
 </message-table>
 
@@ -650,21 +661,21 @@ with this dialogue.</p>
 <declaration type="structure">
 
 <code type="c">
-<p>typedef struct<br />
+typedef struct<br />
 {<br />
  ToolboxEventHeader hdr;<br />
 } OptionsWindowDialogueCompletedEvent;<br />
-</p><br /></code>
+<br /></code>
 </declaration>
 </tboxmessage-definition>
 
 <tboxmessage-definition name="OptionsWindow_FillInPaneDefault"
-                         number="?1"
+                         number="100281"
                          description="Request that the application fill in a pane with the default settings"
                 >
 
 <message-table>
-<message offset="8">&hex;?1</message>
+<message offset="8">&hex;100281</message>
 <message offset="12">flags (none yet defined)</message>
 <message offset="16">pane object id</message>
 </message-table>
@@ -680,22 +691,22 @@ in with the OptionsWindow object id and pane component number.</p>
 <declaration type="structure">
 
 <code type="c">
-<p>typedef struct<br />
+typedef struct<br />
 {<br />
  ToolboxEventHeader hdr;<br />
  ObjectId pane_window;<br />
 } OptionsWindowFillInPaneEvent;<br />
-</p></code>
+</code>
 </declaration>
 </tboxmessage-definition>
 
 <tboxmessage-definition name="OptionsWindow_FillInPaneCurrent"
-                         number="?2"
+                         number="100282"
                          description="Request that the application fill in a pane with the current settings"
                 >
 
 <message-table>
-<message offset="8">&hex;?2</message>
+<message offset="8">&hex;100282</message>
 <message offset="12">flags (none yet defined)</message>
 <message offset="16">pane object id</message>
 </message-table>
@@ -711,22 +722,22 @@ in with the OptionsWindow object id and pane component number.</p>
 <declaration type="structure">
 
 <code type="c">
-<p>typedef struct<br />
+typedef struct<br />
 {<br />
  ToolboxEventHeader hdr;<br />
  ObjectId pane_window;<br />
 } OptionsWindowFillInPaneEvent;<br />
-</p></code>
+</code>
 </declaration>
 </tboxmessage-definition>
 
 <tboxmessage-definition name="OptionsWindow_ConfigurePane"
-                         number="?3"
+                         number="100283"
                          description="Request that the application read the settings from an OptionsWindow pane"
                 >
 
 <message-table>
-<message offset="8">&hex;?3</message>
+<message offset="8">&hex;100283</message>
 <message offset="12">flags (none yet defined)</message>
 <message offset="16">pane object id</message>
 </message-table>
@@ -743,22 +754,22 @@ and pane component number.</p>
 <declaration type="structure">
 
 <code type="c">
-<p>typedef struct<br />
+typedef struct<br />
 {<br />
  ToolboxEventHeader hdr;<br />
  ObjectId pane_window;<br />
 } OptionsWindowConfigurePaneEvent;<br />
-</p></code>
+</code>
 </declaration>
 </tboxmessage-definition>
 
 <tboxmessage-definition name="OptionsWindow_Save"
-                         number="?4"
+                         number="100284"
                          description="Request that the application save all settings"
                 >
 
 <message-table>
-<message offset="8">&hex;?4</message>
+<message offset="8">&hex;100284</message>
 <message offset="12">flags (none yet defined)</message>
 </message-table>
 
@@ -773,11 +784,11 @@ OptionsWindow object id.</p>
 <declaration type="structure">
 
 <code type="c">
-<p>typedef struct<br />
+typedef struct<br />
 {<br />
  ToolboxEventHeader hdr;<br />
 } OptionsWindowSaveEvent;<br />
-</p></code>
+</code>
 </declaration>
 </tboxmessage-definition>
 

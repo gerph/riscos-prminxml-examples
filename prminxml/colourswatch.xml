@@ -34,6 +34,7 @@ of the ColourDBox.</p>
 <p>Bits in the flags word for a colour swatch gadget have the following
 meanings:</p>
 
+<p>
 <bitfield-table>
  <bit number="0" state="reserved" />
  <bit number="2">when set, include a <strong>None</strong> button in the
@@ -42,13 +43,16 @@ meanings:</p>
                  dialogue box is created</bit>
  <bit number="4-31" state="reserved" />
 </bitfield-table>
+</p>
 
 <subsection title="Colour Swatch templates">
 
+<p>
 <value-table head-number="Field" head-name="Size in bytes" head-value="Type">
 <value number="colour" name="4">word</value>
 <value number="title" name="4">MsgReference</value>
 </value-table>
+</p>
 
 </subsection>
 </section>
@@ -79,7 +83,7 @@ meanings:</p>
  </value-table>
 </register-use>
 <register-use number="1">Colour number in the form &hex;BBGGRR00</register-use>
-<register number="2-9" state="preserved" />
+<register-use number="2-9" state="preserved" />
 
 </exit>
 
@@ -123,7 +127,7 @@ extern _kernel_oserror *colourswatch_get_colour ( unsigned int flags,<br />
 </entry>
 
 <exit>
-<register number="0-9" state="preserved" />
+<register-use number="0-9" state="preserved" />
 </exit>
 
 <use>

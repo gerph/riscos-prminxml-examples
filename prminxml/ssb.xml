@@ -408,7 +408,7 @@ be used after this has been called.</p>
 <section title="Errors">
 <error-definition name="AudioQueueFull"
                   number="81A140"
-                  description="Audio queue full" />
+                  description="Audio queue full">
 
 
 <use>
@@ -419,6 +419,7 @@ type="swi" name="SharedSoundBuffer_SetBuffer" />.  The block passed is
 not added to the queue.</p>
 
 </use>
+</error-definition>
 
 </section>
 

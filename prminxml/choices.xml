@@ -239,30 +239,30 @@ to expand this variable themselves.</p>
 
  <history>
   <revision number="0.00" author="JRF" date="04 Jun 1998">
-    Released to various people via IRC and email for comments.
-    Sent to Dave Walker for confirmation that I'm not talking
-    rubbish.
+    <change>Released to various people via IRC and email for comments.</change>
+    <change>Sent to Dave Walker for confirmation that I'm not talking
+    rubbish.</change>
   </revision>
 
   <revision number="1.00" author="JRF" date="29 Jun 1998">
-    Suggestions, comments and complaints added to the document.
-    Reformatted into sections.
+    <change>Suggestions, comments and complaints added to the document.</change>
+    <change>Reformatted into sections.</change>
   </revision>
 
   <revision number="1.01" author="JRF" date="08 Jan 1999">
-    Reformatted as HTML for the 'info' section of my website.
+    <change>Reformatted as HTML for the 'info' section of my website.</change>
   </revision>
   
   <revision number="2.00" author="JRF" date="09 Jan 2002">
-    Re-written from scratch, using information in the original.
-    Support for RISC OS 3.1 is no longer given and is strongly
-    discouraged.
-    We no longer provide examples; applications programmers
+    <change>Re-written from scratch, using information in the original.</change>
+    <change>Support for RISC OS 3.1 is no longer given and is strongly
+    discouraged.</change>
+    <change>We no longer provide examples; applications programmers
     capable of using files should be able to construct their
     own code. The removal of support for RISC OS 3.1 makes
-    such examples redundant anyhow.
-    This documentation is based on the PRMinXML structures, rather
-    than HSC.
+    such examples redundant anyhow.</change>
+    <change>This documentation is based on the PRMinXML structures, rather
+    than HSC.</change>
   </revision>
  </history>
 </meta>
