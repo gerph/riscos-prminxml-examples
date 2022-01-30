@@ -1,0 +1,455 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 2: Chapter 51: Hourglass -->
+
+<chapter title="Hourglass">
+
+<section title="Introduction and Overview">
+
+<p>The Hourglass module will change the pointer shape to that of an
+hourglass. You can optionally also display:</p>
+
+<p>
+<list>
+<item><p>a percentage figure</p></item>
+<item><p>'LED' indicators for status information (one above the hourglass, and one
+   below).</p></item>
+</list>
+</p>
+
+<p>Note that cursor shapes 3 and 4 are used (and hence corrupted) by the
+hourglass. You should not use these shapes in your programs.</p>
+
+<p>Normally the Hourglass module is used to display an hourglass on the
+screen whenever there is prolonged activity on the Econet. The calls to do
+so are made by the NetStatus module, which claims the EconetV vector. See
+the section entitled <reference href="SOFTVECS.HTML#79772">Software
+vectors</reference> and the <reference type="document"
+href="../filesystems/netstatus">NetStatus</reference> for further details.</p>
+
+<p>The hourglass should also be used by any software that may take some time
+to do a particular job, especially when:</p>
+
+<p>
+<list>
+<item><p>there is no other indication of activity</p></item>
+
+<item><p>the processing time is file size dependent (some users may have files
+much bigger than you expect)</p></item>
+
+<item><p>the processing time is processor speed dependent (some users may be in a
+screen mode that is hungry for memory bandwidth).</p></item>
+
+</list>
+</p>
+
+<p>Software using the hourglass should, whenever possible, use the
+percentage feature; see the section entitled <reference type="section"
+name="Example programs" /> for an example of this.</p>
+
+<p>The rest of this chapter details the SWIs used to control the
+hourglass.</p>
+
+</section>
+<section title="SWI Calls">
+
+<swi-definition name="Hourglass_On"
+                number="406C0"
+                description="Turns on the hourglass"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+<use>
+<p>This turns on the hourglass. Although control returns immediately there
+is a delay of <sup>1</sup>/<sub>3</sub> of a second before the hourglass
+becomes visible. Thus you can bracket an operation by
+Hourglass_On/Hourglass_Off so that the hourglass will only be displayed if
+the operation takes longer than <sup>1</sup>/<sub>3</sub> of a second.</p>
+
+<p>You can set a different delay using
+<reference type="swi" name="Hourglass_Start" />.</p>
+
+<p>Hourglass_On's are nestable. If the hourglass is already visible then a
+count is incremented and the hourglass will remain visible until an
+equivalent number of Hourglass_Off's are done. The LEDs and percentage
+indicators remain unchanged.</p>
+
+</use>
+
+<example>
+<p>The example below illustrates the use of bracketing calls to Hourglass_On
+/ Hourglass_Off:</p>
+
+<p>
+<extended-example>
+DoLoadAndProcess
+        STMFD   r13!, {r0-r5, r14}
+        MOV     r0, #OSFile_Load
+        ADR     r2, Buffer
+        MOV     r3, #0
+        SWI     XOS_File
+        BVS     ExitLoadAndProcess
+        CMP     r4, #0
+        BEQ     ExitLoadAndProcess
+        SWI     XHourglass_On
+        BVS     ExitLoadAndProcess
+        ADR     r1, Buffer
+ProcessLoop
+        LDRB    r0, [r1], #1
+        BL      ProcessByte
+        BVS     FinishProcess
+        SUBS    r4, r4, #1
+        BNE     ProcessLoop
+FinishProcess
+        SWI     XHourglass_Off
+ExitLoadAndProcess
+        STRVS   r0, [r13, #0]
+        LDMFD   r13!, {r0-r5, pc}
+</extended-example>
+</p>
+</example>
+
+<related>
+<reference type="swi" name="Hourglass_Off" />
+<reference type="swi" name="Hourglass_Start" />
+</related>
+</swi-definition>
+
+<swi-definition name="Hourglass_Off"
+                number="406C1"
+                description="Turns off the hourglass"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call decreases the count of the number of times that the hourglass
+has been turned on. If this makes the count zero, it turns off the
+hourglass.</p>
+
+<p>When the hourglass is removed the pointer number and colours are restored
+to those in use at the first Hourglass_On.</p>
+
+<p>From RISC OS 3 onwards, the system also turns the percentage display off
+if leaving the level that turned it on, even if the hourglass itself is not
+turned off. See the <reference type="swi" name="Hourglass_On" /> for an
+example of this.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="Hourglass_On" />
+<reference type="swi" name="Hourglass_Smash" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+<swi-definition name="Hourglass_Smash"
+                number="406C2"
+                description="Turns off the hourglass immediately"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call turns off the hourglass immediately, taking no notice of the
+count of nested Hourglass_On's. If you use this call you must be sure
+neither you, nor anyone else, should be displaying an hourglass.</p>
+
+<p>When the hourglass is removed the pointer number and colours are restored
+to those in use at the first Hourglass_On, except under RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="Hourglass_Off" />
+</related>
+</swi-definition>
+
+<swi-definition name="Hourglass_Start"
+                number="406C3"
+                description="Turns on the hourglass after a given delay"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+<register-use number="0">delay before start-up (in centiseconds), or 0 to
+                         suppress the hourglass</register-use>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call works in the same way as Hourglass_On, except you can specify
+your own start-up delay.</p>
+
+<p>If you specify a delay of zero and the hourglass is currently off, then
+future Hourglass_On and Hourglass_Start calls have no effect. The condition
+is terminated by the matching Hourglass_Off, or by an Hourglass_Smash.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="Hourglass_On" />
+<reference type="swi" name="Hourglass_Off" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+<swi-definition name="Hourglass_Percentage"
+                number="406C4"
+                description="Displays a percentage below the hourglass"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+<register-use number="0">percentage to display (if in range 0 - 99), else
+                         turns off percentage</register-use>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call controls the display of a percentage below the hourglass. If R0
+is in the range 0 - 99 the value is displayed; if it is outside this range,
+the percentage display is turned off.</p>
+
+<p>The default condition of an hourglass is not to display percentages.</p>
+
+<p>For a full example of the use of Hourglass_Percentage, see the section
+entitled <reference type="section" name="Example programs" />.</p>
+
+<p>From RISC OS 3 onwards, lower levels of calls cannot alter the hourglass
+percentage once a higher level call is using it. Furthermore, Hourglass_Off
+automatically turns the percentage display off when leaving the level that
+turned it on, even if the hourglass itself is not turned off. For
+example:</p>
+
+<p>
+<extended-example>
+SYS "Hourglass_On"
+  SYS "Hourglass_On"
+  SYS "Hourglass_Percentage",10       :REM sets to 10%
+  SYS "Hourglass_Percentage",20       :REM sets to 20%
+    SYS "Hourglass_On"
+    SYS "Hourglass_Percentage",50     :REM DOESN'T set to 50%
+    SYS "Hourglass_Off"
+  SYS "Hourglass_Percentage",30       :REM sets to 30%
+  SYS "Hourglass_Off"                 :REM turns off percentages
+SYS "Hourglass_Off"                   :REM turns off hourglass
+</extended-example>
+</p>
+
+</use>
+
+<related>
+<!-- None --> 
+</related>
+
+</swi-definition>
+<swi-definition name="Hourglass_LEDs"
+                number="406C5"
+                description="Controls the display indicators above and below the hourglass"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+<register-use number="0">AND value for LEDs</register-use>
+<register-use number="1">EOR value for LEDs</register-use>
+</entry>
+
+<exit>
+<register-use number="0">old value of LEDs' word</register-use>
+</exit>
+
+<use>
+<p>This call controls the two display indicators above and below the hourglass, which can be used to display status information. These are controlled by bits 0 and 1 respectively of the LEDs' word. The indicator is on if the bit is set, and off if the bit is clear. The new value of the word is set as follows:</p>
+
+<p>
+New value = (Old value AND R1) EOR R0
+</p>
+
+<p>The default condition is all indicators off.</p>
+
+</use>
+
+<related>
+</related>
+</swi-definition>
+
+<swi-definition name="Hourglass_Colours"
+                number="406C6"
+                description="Sets the colours used to display the hourglass"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+<entry>
+<register-use number="0">new colour to use as colour 1 (&hex;00BBGGRR, or -1
+                         for no change)</register-use>
+<register-use number="1">new colour to use as colour 3 (&amp;00BBGGRR, or -1
+                         for no change)</register-use>
+</entry>
+
+<exit>
+<register-use number="0">old colour being used as colour 1</register-use>
+<register-use number="1">old colour being used as colour 3</register-use>
+</exit>
+
+<use>
+<p>This call sets the colours used to display the hourglass. Alternatively
+you can use this call to read the current hourglass colours by passing
+parameters of -1.</p>
+
+<p>The default colours are:</p>
+<p>
+<value-table>
+<value number="Colour 1">cyan</value>
+<value number="Colour 3">blue</value>
+</value-table>
+</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+</related>
+</swi-definition>
+</section>
+
+<section title="Example programs">
+
+<p>The examples below illustrate the use of Hourglass_Percentage.</p>
+
+<p>
+<extended-example>
+DoLoadAndProcess
+        STMFD   r13!, {r0-r5, r14}
+        MOV     r0, #OSFile_Load
+        ADR     r2, Buffer
+        MOV     r3, #0
+        SWI     XOS_File
+        BVS     ExitLoadAndProcess
+        CMP     r4, #0
+        BEQ     ExitLoadAndProcess
+        SWI     XHourglass_On
+        BVS     ExitLoadAndProcess
+        ADR     r1, Buffer
+        MOV     r2, #0
+        ; Compute a constant, in R3, such that as the index
+        ; in R2 goes from 0 to the maximum value, in R4, the
+        ; result of (R2 * R3) DIV 2^24 goes from 0 to 100.
+        ; R3 = (100 * 2^24) DIV R4.
+        MOV     r5, #100 :SHL: 24       ; So we get a percentage
+        MOV     r14, r4                 ; R3 := R5 DIV R4
+        CMP     r14, r5, LSR #1         
+DivisionLoop1
+        MOVLS   r14, r14, LSL #1
+        CMPLS   r14, r5, LSR #1
+        BLS     DivisionLoop1
+        MOV     r3, #0
+DivisionLoop2
+        CMP     r5, r14
+        SUBCS   r5, r5, r14
+        ADC     r3, r3, r3
+        MOV     r14, r14, LSR #1
+        CMP     r14, r4
+        BCS     DivisionLoop2
+        ; R3 is now a simple constant
+ProcessLoop
+        MUL     r0, r2, r3
+        MOV     r0, r0, ASR #24
+        SWI     XHourglass_Percentage   ; Call with result
+        LDRVCB  r0, [r1], #1
+        BLVC    ProcessByte             ; May also return V set
+        BVS     InternalError
+        ADD     r2, r2, #1              ; Move the index
+        TEQ     r2, r4
+        BNE     ProcessLoop
+FinishProcess
+        SWI     XHourglass_Off
+ExitLoadAndProcess
+        STRVS   r0, [r13, #0]
+        LDMFD   r13!, {r0-r5, pc}
+InternalError
+        MOV     r1, r0                  ; Preserve the actual error
+        SWI     XHourglass_Off          ; Ignore possible error
+        MOV     r0, r1                  ; Retore real error
+        CMP     pc, #&amp;80000000          ; Set V, to indicate an error
+        B       ExitLoadAndProcess
+</extended-example>
+</p>
+
+<p>Or in BBC BASIC V:</p>
+
+<p>
+<extended-example>
+DEF PROCLoadAndProcess(Name$)
+LOCAL Length%,Index%
+LOCAL ERROR
+SYS "OS_File",255,Name$,Buffer%,0 TO ,,,,Length%
+IF Length%&lt;&gt;0 THEN
+  SYS "Hourglass_On"
+  ON ERROR LOCAL RESTORE ERROR:SYS "Hourglass_Off":ERROR ERR,REPORT$
+  FOR Index%=0 TO Length%
+    SYS "Hourglass_Percentage",(100*Index%) DIV Length%
+    PROCProcessByte(Buffer%?Index%)
+  NEXT Index%
+  SYS "Hourglass_Off"
+ENDIF
+ENDPROC
+</extended-example>
+</p>
+
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

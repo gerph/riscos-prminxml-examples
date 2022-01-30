@@ -1,0 +1,240 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 4: Chapter 75: Squash -->
+
+<chapter title="Squash">
+
+<section title="Introduction and Overview">
+
+<p>This module provides general compression and decompression facilities of
+a lossless nature through a SWI interface. The algorithm is 12-bit LZW,
+however, this may change in future releases.</p>
+
+<p>The interface is designed to be restartable, so that compression or
+decompression can occur from a variety of locations. Operations involving
+file I/O can easily be constructed from the operations provided.</p>
+
+<p>This module is not available in RISC OS 2.</p>
+
+<p>The module is used by the Squash application to generate files of type
+Squash (&hex;FCA). The format of these files is documented in the chapter
+entitled <reference href="FILEFORMATS.HTML#27821">Squash
+files</reference>.</p>
+
+<category title="Errors">
+<p>The following errors can be returned by the Squash module:</p>
+
+<p>
+<value-table head-number="Error number" head-value="Error text">
+ <value number="&hex;921">Bad address for module Squash</value>
+ <value number="&hex;922">Bad input for module Squash</value>
+ <value number="&hex;923">Bad workspace for module Squash</value>
+ <value number="&hex;924">Bad parameters for module Squash</value>
+</value-table>
+</p>
+
+</category>
+</section>
+<section title="SWI calls">
+
+<swi-definition name="Squash_Compress"
+                number="42700"
+                description="Provides general compression of a lossless nature"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="yes"
+                >
+<entry>
+ <register-use number="0">flags:
+  <bitfield-table>
+   <bit number="0">Start new operation; otherwise continue existing
+                   operation (using existing workspace contents)</bit>
+   <bit number="1">End of the input; otherwise more input exists after
+                   this</bit>
+   <bit number="2" state="reserved" />
+   <bit number="3">Return the work space size required and the maximum
+                   output size in bytes (all other bits must be 0);
+                   otherwise perform compression</bit>
+   <bit number="4-31" state="reserved" />
+  </bitfield-table>
+ </register-use>
+ <register-use number="1">input size (-1 to not return maximum output size)
+                          - if bit 3 of R0 is set; or workspace pointer - if
+                          bit 3 of R0 is clear</register-use>
+ <register-use number="2">input pointer, word aligned - if bit 3 of R0 is
+                          clear</register-use>
+ <register-use number="3">number of bytes of input available - if bit 3 of
+                          R0 is clear</register-use>
+ <register-use number="4">output pointer, word aligned - if bit 3 of R0 is
+                          clear</register-use>
+ <register-use number="5">number of bytes of output space available - if bit
+                          3 of R0 is clear</register-use>
+</entry>
+
+<exit>
+
+ <register-use number="0">required work space size - if bit 3 of R0 set on input; else output status - if bit 3 of R0 clear on input: 
+  <value-table>
+   <value number="0">Operation completed</value>
+   <value number="1">Operation ran out of input data (R3 = 0)</value>
+   <value number="2">Operation ran out of output space (R5 &lt; 12)</value>
+  </value-table>
+ </register-use>
+ <register-use number="1">Maximum output size (-1 if we don't know or wasn't asked) - if bit 3 of R0 set on input; else preserved - if bit 3 of R0 clear on input</register-use>
+ <register-use number="2">Updated to show first unused input byte - if bit 3 of R0 clear on input</register-use>
+ <register-use number="3">Updated to show number of input bytes not used - if bit 3 of R0 clear on input</register-use>
+ <register-use number="4">Updated to show first unused output byte - if bit 3 of R0 clear on input</register-use>
+ <register-use number="5">Updated to show number of output bytes not used - if bit 3 of R0 clear on input</register-use> 
+</exit>
+
+<use>
+<p>This call provides general compression of a lossless nature. It acts as a
+filter on a stream of data. The call returns if either the input or the
+output is exhausted.</p>
+
+<p>It is recommended that you use the following facility to determine the
+maximum output size rather than attempting to calculate it yourself:</p>
+
+<p>Call the SWI first with bit 3 of R0 set and the input size placed in R1.
+The maximum output size is then calculated and returned on exit in R1. You
+can use this value to allocate the required amount of space and call the SWI
+again setting the registers as appropriate.</p>
+
+<p>The algorithm used by this module is 12-bit LZW, as used by the UNIX
+'compress' command (with -b 12 specified). If future versions of the module
+use different algorithms, they will still be able to decompress existing
+compressed data. </p>
+
+<p>If bits 0 and 1 of R0 are clear, and the output is definitely big enough,
+a fast algorithm will be used. </p>
+
+<p>The performance of compression on an 8Mhz A420 with ARM2 is approximately
+as follows:</p>
+
+<p>
+<value-table head-number="Operation" head-value="Speed">
+<value number="Store to store">24 Kbytes per second</value>
+<value number="Fast case">68 Kbytes per second</value>
+</value-table>
+</p>
+
+<p>where 'Fast case' is store to store, with all input present, and with an output buffer large enough to hold all output.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="Squash_Decompress" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+
+
+<swi-definition name="Squash_Decompress"
+                number="42701"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="yes"
+                description="Provides general decompression of a lossless nature"
+                >
+
+<entry>
+ <register-use number="0">flags: 
+  <bitfield-table>
+   <bit number="0">Start new operation; otherwise continue existing
+                   operation (using existing workspace contents)</bit>
+   <bit number="1">End of the input; otherwise more input exists after
+                   this</bit>
+   <bit number="2">You may assume that the output will all fit in this
+                   buffer (allows a faster algorithm to be used, if bits 0
+                   and 1 are both 0)</bit>
+   <bit number="3">Return the work space size required and the maximum
+                   output size in bytes (all other bits must be 0);
+                   otherwise perform compression</bit>
+   <bit number="4-31" state="reserved" />
+  </bitfield-table>
+ </register-use>
+ <register-use number="1">input size (-1 to do not return maximum output
+                          size) - if bit 3 of R0 is set; or workspace
+                          pointer - if bit 3 of R0 is clear</register-use>
+ <register-use number="2">input pointer - if bit 3 of R0 is
+                          clear</register-use>
+ <register-use number="3">number of bytes of input available - if bit 3 of
+                          R0 is clear</register-use>
+ <register-use number="4">output pointer - if bit 3 of R0 is
+                          clear</register-use>
+ <register-use number="5">number of bytes of output space available - if bit
+                          3 of R0 is clear</register-use>
+</entry>
+
+<exit>
+
+ <register-use number="0">required work space size - if bit 3 of R0 set on input; else output status - if bit 3 of R0 clear on input: 
+  <value-table>
+   <value number="0">Operation completed</value>
+   <value number="1">Operation ran out of input data (R3 &lt; 12)</value>
+   <value number="2">Operation ran out of output space (R5 = 0)</value>
+  </value-table>
+ </register-use>
+ <register-use number="1">Maximum output size (-1 if we don't know or wasn't asked) - if bit 3 of R0 set on input; else preserved - if bit 3 of R0 clear on input</register-use>
+ <register-use number="2">Updated to show first unused input byte - if bit 3 of R0 clear on input</register-use>
+ <register-use number="3">Updated to show number of input bytes not used - if bit 3 of R0 clear on input</register-use>
+ <register-use number="4">Updated to show first unused output byte - if bit 3 of R0 clear on input</register-use>
+ <register-use number="5">Updated to show number of output bytes not used - if bit 3 of R0 clear on input</register-use> 
+</exit>
+
+<use>
+<p>This SWI provides general decompression of a lossless nature.</p>
+
+<p>Note: The current algorithm cannot predict what the size of the
+decompressed output will be. This means that, currently, -1 is always
+returned on exit in R1. In future releases this may change; it is therefore
+recommended that you call the SWI first with bit 3 of R0 set and the input
+size placed in R1.</p>
+
+<p>In the case where R3 &lt; 12, the unused input must be resupplied.</p>
+
+<p>The performance of decompression on an 8Mhz A420 with ARM2 is
+approximately as follows:</p>
+
+<p>
+<value-table head-number="Operation" head-value="Speed">
+<value number="Store to store">48 Kbytes per second</value>
+<value number="Fast case">280 Kbytes per second</value>
+</value-table>
+</p>
+
+<p>where 'Fast case' is store to store, with all input present, and with an
+output buffer large enough to hold all output.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="Squash_Compress" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

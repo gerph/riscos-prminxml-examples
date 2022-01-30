@@ -1,0 +1,219 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 3: Chapter 57: The TaskManager module -->
+
+<chapter title="TaskManager">
+
+<section title="Introduction and Overview">
+
+<p>The Task Manager module provides various facilities to ease the management of tasks. These are:</p>
+
+<p>
+<list>
+<item><p>a SWI to find the name of a task, given its handle</p></item>
+
+<item><p>a SWI to enumerate all the currently active tasks</p></item>
+
+<item><p>a SWI to initiate a desktop shutdown</p></item>
+
+<item><p>a * Command to change the size of various system areas.</p></item>
+
+</list>
+</p>
+
+<p>The Task Manager module is not available in RISC OS 2.</p>
+
+</section>
+<section title="SWI calls">
+
+<swi-definition name="TaskManager_TaskNameFromHandle"
+                number="42680"
+                description="Finds the name of a task"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="yes"
+                >
+
+<entry>
+<register-use number="0">task handle</register-use>
+</entry>
+
+<exit>
+<register-use number="0">pointer to task name</register-use>
+</exit>
+
+<use>
+<p>This call returns the name of a task, given its task handle. If you wish to keep the name, you must copy it into your own workspace.</p> 
+
+</use>
+
+<related>
+<reference type="swi" name="TaskManager_EnumerateTasks" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+
+
+<swi-definition name="TaskManager_EnumerateTasks"
+                number="42681"
+                description="Enumerates all the currently active tasks"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+<entry>
+<register-use number="0">0 for first call, or value from previous call
+</register-use>
+<register-use number="1">pointer to word aligned buffer</register-use>
+<register-use number="2">buffer length (in bytes)</register-use>
+</entry>
+
+<exit>
+<register-use number="0">value to pass to next call, or &lt; 0 if no more
+                         entries</register-use>
+
+<register-use number="1">pointer to first unused word in buffer
+</register-use>
+
+<register-use number="2">number of unused bytes in buffer</register-use>
+</exit>
+
+<use>
+<p>This call enumerates all the currently active tasks. On exit the buffer is filled with entries of the form:</p> 
+
+<p>
+<offset-table>
+<offset number="0">task handle</offset>
+<offset number="4">pointer to task name (should be copied away and not used in place)</offset>
+<offset number="8">amount of memory (in K) used by the task</offset>
+<offset number="12">flags:
+ <bitfield-table>
+  <bit number="0">module task, otherwise application task</bit>
+  <bit number="1">slot bar is draggable, otherwise slot bar cannot be
+                  dragged</bit>
+  <bit number="2-3" state="reserved" />
+ </bitfield-table>
+</offset>
+</offset-table>
+</p>
+</use>
+
+<related>
+<reference type="swi" name="TaskManager_TaskNameFromHandle" />
+<!-- None --> 
+
+</related>
+</swi-definition>
+<swi-definition name="TaskManager_Shutdown"
+                number="42682"
+                description="Initiates a desktop shutdown"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+<register-use number="0">shutdown flags :
+ <bitfield-table>
+  <bit number="0">don't display restart dialogue (equivalent to
+                  <menuoption>Exit</menuoption> menu option)</bit>
+  <bit number="1">don't broadcast
+         <reference type="message" name="PreQuit" href="WIMP.HTML#59160" />
+         </bit>
+  <bit number="2">flag in CMOS as portable power-down</bit>
+  <bit number="3">send 
+         <reference type="message" name="Shutdown" href="WIMP.HTML#13748" />
+         </bit>
+  <bit number="4">reject OS_UpCall 1 and 2 (see
+         <reference href="COMMS.HTML#25162">OS_UpCall 1 and 2</reference>)
+         </bit>
+  <bit number="5-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call initiates a desktop shutdown. The actions performed are controlled by the shutdown flags held in R0.</p> 
+
+</use>
+
+<related>
+<!-- None --> 
+<!-- None --> 
+
+</related>
+</swi-definition>
+</section>
+<section title="* Commands">
+
+<command-definition name="ChangeDynamicArea"
+                    description="Changes the size of the font cache, system sprite area and/or RAM disc"
+                    >
+
+<syntax>
+<optional>
+ <switch name="FontSize"><userreplace>n</userreplace></switch>
+ <optional><text>K</text></optional>
+</optional>
+ 
+<optional>
+ <switch name="SpriteSize"><userreplace>n</userreplace></switch>
+ <optional><text>K</text></optional>
+</optional>
+ 
+<optional>
+ <switch name="RamFSSize"><userreplace>n</userreplace></switch>
+ <optional><text>K</text></optional>
+</optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="n">Size of the area to be set, in kilobytes</parameter> 
+
+<use>
+<p>*ChangeDynamicArea changes the size of the font cache, system sprite area
+and/or RAM disc. It generates an error if it is unable to do so. Its main
+use is in desktop boot files.</p> 
+
+</use>
+
+<example>
+<command>*ChangeDynamicArea -SpriteSize 32K -RamFsSize 100K</command>
+</example>
+
+<related>
+<!-- None --> 
+<reference type="swi" name="OS_ChangeDynamicArea" href="memoryman.html" />
+<reference type="swi" name="OS_UpCall 257" href="comms.html" />
+<!-- None --> 
+
+</related>
+</command-definition>
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

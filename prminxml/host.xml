@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+<chapter title="Host">
+<section title="Introduction and Overview">
+<p>
+Host looks for information about Internet hosts without using the Resolver
+module. It gets this information from a set of interconnected servers that
+are spread across the world. By default, it simply converts between  host
+names and Internet addresses. However with the -t or -a options, it can be
+used to find all of the information about this host that is maintained by
+the domain server. </p>
+</section>
+
+<section title="Technical details">
+<p>
+The arguments can be either host names or host numbers. The program first 
+attempts to interpret them as host numbers. If this fails, it will treat
+them as host names.  A host number consists of first decimal numbers
+separated by dots, e.g. 128.6.4.194. A host name consists of names separated 
+by dots, e.g. topaz.rutgers.edu. Unless the name ends in a dot, the local
+domain is automatically tacked on the end. Thus a Rutgers user can say
+"host topaz", and it will actually look up "topaz.rutgers.edu". If this
+fails, the name is tried unchanged (in this case, "topaz"). This same
+convention is used for mail and other network utilities. The actual suffix
+to tack on the end is obtained by looking at the results of a "hostname"
+call, and using everything starting at the first dot.
+</p>
+
+<p>
+The arguments are the host names you want to look up.  If
+any are host numbers, an "inverse query" is done, i.e. the
+domain system looks in a separate set of databases used to
+convert numbers to names.
+</p>
+
+<p>
+If a name is specified, you may see output of three different kinds. 
+Here is an example that shows all of them:
+<br />
+<userinput>% host sun4</userinput><br />
+<systemoutput>
+sun4.rutgers.edu is a nickname for ATHOS.RUTGERS.EDU<br />
+ATHOS.RUTGERS.EDU has address 128.6.5.46<br />
+ATHOS.RUTGERS.EDU has address 128.6.4.4<br />
+ATHOS.RUTGERS.EDU mail is handled by ARAMIS.RUTGERS.EDU<br />
+</systemoutput>
+</p>
+
+<p>
+The user has typed the command "host sun4". The first line indicates that 
+the name "sun4.rutgers.edu" is actually a nickname. The official host 
+name is "ATHOS.RUTGERS.EDU'. The next two lines show the address. If a
+system has more than one network interface, there will be a separate address
+for each.  The last line indicates that ATHOS.RUTGERS.EDU does not
+receive its own mail. Mail for it is taken by ARAMIS.RUTGERS.EDU. 
+There may be more than one such line, since some systems have more than one
+other system that will handle mail for them. Technically, every system
+that can receive mail is supposed to have an entry of this kind.  If the 
+system receives its own mail, there should be an entry the mentions the
+system itself, for example "XXX mail is handled by XXX".  However
+many systems that receive their own mail do not bother to mention that fact. 
+If a system has a "mail is handled by" entry, but no address, this
+indicates that it is not really part of the Internet, but a system that is
+on the network will forward mail to it. </p>
+
+<p>
+There are a number of options that can be used before the host name. 
+Most of these options are meaningful only to the staff who have to maintain
+the domain database.
+</p>
+
+<p>
+The -t option is used to filter what information is
+presented, as you would expect.  The default is address
+information, which also include PTR and NS records. The
+command :
+<br />
+<userinput>host -l -v -t any rutgers.edu</userinput>
+<br />
+will give a complete download of the zone data  for
+rutgers.edu, in the official master file format. (However
+the SOA record is listed twice, for arcane reasons.)  NOTE:
+-l is implemented by doing a complete zone transfer and then
+filtering out the information the you have asked for.  This
+command should be used only if it is absolutely necessary.
+</p>
+
+</section>
+
+<section title="*Commands">
+<command-definition name="Host"
+                    description="Resolve information about a host directly">
+<syntax>
+ <optional><switch name="l" /></optional>
+ <optional><switch name="v" /></optional>
+ <optional><switch name="w" /></optional>
+ <optional><switch name="r" /></optional>
+ <optional><switch name="d" /></optional>
+ <optional><switch name="t"> <userreplace>type</userreplace></switch>
+ </optional>
+ <optional><switch name="a" /></optional>
+ <optional><switch name="s"> <userreplace>server</userreplace></switch>
+ </optional>
+ <userreplace>host</userreplace>
+</syntax>
+
+<parameter switch="help">Display help message</parameter>
+<parameter switch="l">List a complete domain</parameter>
+<parameter switch="v">Use verbose output. This is the official domain
+                      master file format, which is used almost exclusively
+                      by unix systems and widely by others. Without this
+                      option, output still follows this format in general
+                      terms, but some attempt is made to make it more
+                      intelligible to normal users.</parameter>
+<parameter switch="w">Causes host to wait forever for a response. Normally
+                      it will time out after around a minute.</parameter>
+<parameter switch="r">Causes recursion to be turned off in the request. This
+                      means that the name server will return only data it
+                      has in its own database. It will not ask other servers
+                      for more information.</parameter>
+<parameter switch="d">Turns on debugging. Network transactions are shown
+                      in detail.</parameter>
+<parameter switch="t" name="type">Select information to display. Currently
+                      supported types may be obtained by specifying an
+                      invalid option such as '?'.</parameter>
+<parameter switch="a">Show all details (equivilent to '-v -t *')</parameter>
+<parameter switch="s" name="server">Select server to query for information.
+                      </parameter>
+<parameter name="host">Host name, or other entity, to resolve</parameter>
+
+<use>
+<p>This command attempts to resolve the host name specified by communicating
+directly with the servers. If an address could be resolved, it will be
+displayed.</p>
+
+</use>
+
+<example>
+<command>*Host bingle.org</command>
+</example>
+
+<related>
+<!-- <reference type="command" name="Com" /> -->
+<!-- <reference type="swi" name="thingy" /> -->
+<!-- <reference type="vector" name="bingleV" /> -->
+</related>
+
+</command-definition>
+</section>
+
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

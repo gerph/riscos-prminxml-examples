@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 3: Chapter 55: Drag A Sprite -->
+
+<chapter title="Drag A Sprite">
+
+<section title="Introduction">
+
+<p>The DragASprite module provides SWI calls with which you can make the pointer drag a sprite around the screen. Since not all users will prefer this effect to dragging an outline - whether for aesthetics or performance - there is a bit in the CMOS RAM used to indicate their preference. (See the chapter entitled <reference type="section" href="?MEMORYMAN.HTML#40894" name="Non-volatile memory (CMOS RAM)" />.) You should examine that bit before using this module; if it shows that the user would prefer to drag outlines, oblige them!</p>
+
+<p>To drag a sprite:</p>
+
+<p>
+<list type="ordered">
+<item><p>Prepare a sprite to be dragged (this may be trivial, as the application may have a suitable sprite already to hand).</p></item>
+
+<item><p>Call the SWI <reference type="swi" name="DragASprite_Start" />. This takes a copy of your sprite - so you can dispose of your copy whenever you like - and then starts a Wimp drag.</p></item>
+
+<item><p>When the Wimp sends you an indication that your drag has finished, you should call the SWI <reference type="swi" name="DragASprite_Stop" /> to release the workspace used for the drag.</p></item>
+
+</list>
+</p>
+
+</section>
+<section title="SWI calls">
+
+<swi-definition name="DragASprite_Start"
+                number="42400"
+                description="Start a sprite drag operation"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+
+<register-use number="0">flags :
+<bitfield-table>
+<bit number="0 - 1">Horizontal location of sprite in box:
+ <bitfield-table>
+  <bit number="00">left</bit>
+  <bit number="01">centre</bit>
+  <bit number="10">right</bit>
+ </bitfield-table>
+</bit>
+<bit number="2 - 3">Vertical location of sprite in box:
+ <bitfield-table>
+  <bit number="00">bottom</bit>
+  <bit number="01">centre</bit>
+  <bit number="10">top</bit>
+ </bitfield-table>
+</bit>
+<bit number="4 - 5">Drag bounding box is:
+ <bitfield-table>
+  <bit number="00">whole screen</bit>
+  <bit number="01">display area of window that the pointer's over</bit>
+  <bit number="10">specified in block pointed to by R4</bit>
+ </bitfield-table>
+</bit>
+<bit number="6">Bounding box applies to:
+ <bitfield-table>
+  <bit number="0">the box</bit>
+  <bit number="1">the pointer</bit>
+ </bitfield-table>
+</bit>
+<bit number="7">Control of drop-shadow:
+ <bitfield-table>
+  <bit number="0">don't do a drop-shadow</bit>
+  <bit number="1">make a drop shadow when copying the sprite</bit>
+ </bitfield-table>
+</bit>
+<bit number="8">Control of translucency (just cross-hatching in current version):
+ <bitfield-table>
+  <bit number="0">dragged sprite will be translucent</bit>
+  <bit number="1">dragged sprite will be solid</bit>
+ </bitfield-table>
+</bit>
+<bit number="9">Control of sprite centering:
+ <bitfield-table>
+  <bit number="0">sprite position is determined by bits 0 - 3</bit>
+  <bit number="1">sprite will be centered on the pointer</bit>
+ </bitfield-table>
+</bit>
+<bit number="10 - 31">Reserved for future use - should be set to 0</bit>
+</bitfield-table>
+</register-use>
+<register-use number="1">sprite area holding sprite: 
+<value-table>
+ <value number="0">system sprite area</value>
+ <value number="1">wimp sprite area</value>
+ <value number="Other">address of sprite area</value>
+</value-table> 
+</register-use>
+<register-use number="2">pointer to sprite name</register-use>
+<register-use number="3">pointer to 16-byte block containing box</register-use>
+<register-use number="4">pointer to optional 16-byte block containing bounding box (see flags)</register-use>
+</entry>
+
+<exit>
+<register-use number="0-4" state="preserved" />
+</exit>
+
+<use>
+<p>This call starts dragging a sprite. The sprite you supply is copied, so
+there is no problem if you dispose of your copy of the sprite. If there is
+insufficient memory available to start the drag, the call reverts to a
+normal drag of a dotted outline.</p>
+
+<p>The blocks pointed to by R3 and - optionally - R4 have the following
+format:</p>
+
+<p>
+<offset-table head-number="Offset" head-value="Use">
+<offset number="0" name="x-low"></offset>
+<offset number="4" name="y-low">bottom-left (x-low, y-low) is inclusive</offset>
+<offset number="8" name="x-high">top-right (x-high, y-high) is exclusive</offset>
+<offset number="12" name="y-high"></offset>
+</offset-table>
+</p>
+
+</use>
+
+<related>
+<reference type="swi" name="DragASprite_Stop" />
+</related>
+</swi-definition>
+
+
+
+<swi-definition name="DragASprite_Stop"
+                number="42401"
+                description="Terminates any current drag operation, and releases workspace"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="undefined"
+                >
+
+<entry>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call terminates any current drag operation, and releases any
+workspace claimed by the DragASprite module to do a drag. You should make
+this call when your application receives the User_Drag_Box reason code from
+<reference type="swi" href="?WIMP.HTML#86601" name="Wimp_Poll" /> during a
+drag.</p> 
+
+</use>
+
+<related>
+<reference type="swi" name="DragASprite_Start" />
+</related>
+</swi-definition>
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

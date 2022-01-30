@@ -1,0 +1,2239 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 3: Chapter 60: ColourTrans -->
+<!-- NOTE: Many of the links in this document are screwed -->
+
+<chapter title="ColourTrans">
+
+<section title="Introduction">
+
+<p>ColourTrans allows a program to select the physical red, green and blue
+colours that it wishes to use, given a particular output device and palette.
+ColourTrans then calculates the best colour available to fit the required
+colour. </p>
+
+<p>Thus, an application doesn't have to be aware of the number of colours
+available in a given mode.</p>
+
+<p>It can also intelligently handle colour usage with sprites and the font
+manager, and is the best way to set up colours when printing.</p>
+
+<p>Finally, it supports colour calibration, so that you can make different
+output devices produce the same colours. (This feature is not supported by
+RISC OS 2)</p>
+
+<p>Before reading this chapter, you should be familiar with the VDU, sprite
+and font manager principles.</p>
+
+<p>We also advise that you read the chapter entitled <reference
+type="section" name="Printing a document from an application" href="?pdriver" />. This
+section gives advice on which ColourTrans calls you should use to set
+colours when printing. You'll probably find it easiest if you use the same
+calls for screen output; you should then find that your routines for printer
+and screen output can share large parts of coding.</p>
+
+</section>
+<section title="Overview">
+
+<p>The ColourTrans module is provided on disc in RISC OS 2 as the file System:Modules.Colours, but is in the ROM for later releases of RISC OS. Any application which uses it should ensure it is present using the *RMEnsure command, say from an Obey file. For example:</p>
+
+<p><command>RMEnsure ColourTrans 0.51 RMLoad System:Modules.Colours<br />
+RMEnsure ColourTrans 0.51 Error You need ColourTrans 0.51 or later</command>
+</p>
+
+<subsection title="Definition of terms">
+
+<p>Here are some terms you should know when using this chapter.</p>
+
+<p>GCOL is like the colour parameter passed to VDU 17. It uses a simple
+format for 256 colour modes.</p>
+
+<p>Colour number is what is written into screen memory to achieve a given
+colour in a particular mode.</p>
+
+<p>Palette entry is a word that contains a description of a physical colour
+in red, green and blue levels. Usually, this term refers to the required
+colour that is passed to a ColourTrans SWI.</p>
+
+<p>Palette pointer is a pointer to a list of palette entries. The table
+would have one entry for each logical colour in the requested mode. In 256
+colour mode, only 16 entries are needed, as there are only 16 palette
+registers.</p>
+
+<p>Closest colour is the colour in the palette that most closely matches the
+palette entry passed. Furthest colour is the one furthest from the colour
+requested. These terms refer to a least-squares test of closeness.</p>
+
+</subsection>
+<subsection title="Finding a colour">
+
+<p>There are many SWIs that will find the best fit colour in the palette for
+a set of parameters. Here is a list of the different kinds of parameters
+that can return a best fit colour:</p>
+
+<p>
+<list>
+<item><p>Given palette entry, return nearest or furthest GCOL</p></item>
+
+<item><p>Given palette entry, return nearest or furthest colour number</p></item>
+
+<item><p>Given palette entry, mode and palette pointer, return nearest or furthest GCOL</p></item>
+
+<item><p>Given palette entry, mode and palette pointer, return nearest or furthest colour number</p></item>
+
+</list>
+</p>
+
+</subsection>
+<subsection title="Setting a colour">
+
+<p>Some SWIs will set the VDU driver GCOL to the calculated GCOL after
+finding it.</p>
+
+<p>
+<list>
+<item><p>Given palette entry, return nearest GCOL, and set that colour</p></item>
+
+<item><p>Given palette entry, return furthest GCOL, and set that colour</p></item>
+
+</list>
+</p>
+
+</subsection>
+<subsection title="Conversion">
+
+<p>There is a pair of SWIs to convert GCOLs to and from colour numbers. Note
+that this only has meaning for 256 colour modes. There are also SWIs to
+convert between different colour models, such as RGB, CIE, HSV, and
+CMYK.</p>
+
+</subsection>
+<subsection title="Sprites and Fonts">
+
+<p>ColourTrans provides full facilities for setting the colours used by
+sprites and fonts.</p>
+
+</subsection>
+<subsection title="Using other palette SWIs">
+
+<p>If an application changes the output palette (perhaps by changing the
+screen colours or by switching output to a sprite), then it has to call a
+SWI to inform ColourTrans. This is because ColourTrans maintains a cache
+used for mapping colours. If the palette has independently changed, then it
+has no way of telling.</p>
+
+<p>If the screen mode has changed there is no need to use this call, since
+the ColourTrans module detects this itself - but, under RISC OS 2, if output
+is switched to a sprite (and ColourTrans will be used) then the SWI must
+also be called.</p>
+
+</subsection>
+<subsection title="Wimp">
+
+<p>If you are using the Wimp interface, then the ColourTrans calls are fine
+to use, because they never modify the palette.</p>
+
+</subsection>
+<subsection title="Printing">
+
+<p>Because ColourTrans allows an application to request an RGB colour rather
+than a logical colour, it is ideal for use with the printer drivers, where a
+printer may be able to represent some RGB colours more accurately then the
+screen.</p>
+
+</subsection>
+<subsection title="Colour calibration">
+
+<p>There is a major problem in working with colour documents. This is that,
+if the user selects some colours on the screen, they may well come out as
+different colours on a printer or other final output device. Colour
+calibration is a way to get round this problem.</p>
+
+<p>Colour calibration involves calibrating the screen colours with a fixed
+standard set of colours, and also calibrating the output device colours to
+the same fixed set of colours. Then, when an application draws to the
+screen, it does so in standard colours which are converted by the OS to
+screen colours. If the application draws to the printer it again does so in
+standard colours, but this time they are converted to printer colours.</p>
+
+<p>So, for the user, calibrating the colours will give constant colour
+reproduction throughout the system, for the cost of calibrating the devices
+in the first place.</p>
+
+<p>Colour calibration is not available in RISC OS 2.</p>
+
+</subsection>
+</section>
+<section title="Technical Details">
+
+<subsection title="Colours">
+
+<p>Two different colour systems are used in 256 colour modes. The GCOL form
+is much easier to use, while the colour number is optimised for the
+hardware. In all other colour modes, they are identical.</p>
+
+<p>The palette entry used to request a given physical colour is in the same
+format as that used to set the anti-alias palette in the font manager.</p>
+
+<subsubsection title="GCOL">
+
+<p>The 256 colour modes use a byte that looks like this:</p>
+
+<p>
+<bitfield-table>
+ <bit number="0">Tint bit 0 (red+green+blue bit 0)</bit>
+ <bit number="1">Tint bit 1 (red+green+blue bit 1)</bit>
+ <bit number="2">Red bit 2</bit>
+ <bit number="3">Red bit 3 (high)</bit>
+ <bit number="4">Green bit 2</bit>
+ <bit number="5">Green bit 3 (high)</bit>
+ <bit number="6">Blue bit 2</bit>
+ <bit number="7">Blue bit 3 (high)</bit>
+</bitfield-table>
+</p>
+
+<p>This format is converted into the internal 'colour number' format when
+stored, because that is what the VIDC hardware recognises.</p>
+
+</subsubsection>
+<subsubsection title="Colour number">
+
+<p>The 256 colour mode in the colour number looks like this:</p>
+
+<p>
+<bitfield-table>
+<bit number="0">Tint bit 0 (red+green+blue bit 0)</bit>
+<bit number="1">Tint bit 1 (red+green+blue bit 1)</bit>
+<bit number="2">Red bit 2</bit>
+<bit number="3">Blue bit 2</bit>
+<bit number="4">Red bit 3 (high)</bit>
+<bit number="5">Green bit 2</bit>
+<bit number="6">Green bit 3 (high)</bit>
+<bit number="7">Blue bit 3 (high)</bit>
+</bitfield-table>
+</p>
+
+<p>In fact the bottom 4 bits of the colour number are obtained via the
+palette, but the default palette in 256 colour modes is set up so that the
+above settings apply, and this is not normally altered.</p>
+
+</subsubsection>
+<subsubsection title="Palette entry">
+
+<p>The palette entry is a word of the form &hex;BBGGRR00. That is, it
+consists of four bytes, with the palette value for the blue, green and red
+gun in the top three bytes. Bright white, for instance would be
+&hex;FFFFFF00, while half intensity cyan would be &hex;77770000. The current
+graphics hardware only uses the upper nibbles of these colours, but for
+upwards compatibility the lower nibble should contain a copy of the upper
+nibble.</p>
+
+</subsubsection>
+</subsection>
+<subsection title="Finding a colour">
+
+<p>The SWIs that find the best fit have generally self explanatory names. As
+shown in the overview, they follow a standard pattern. They are as
+follows:</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnGCOL" /><br />
+Given palette entry, return nearest GCOL</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnOppGCOL" /><br />
+Given palette entry, return furthest GCOL</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnColourNumber" /><br />
+Given palette entry, return nearest colour number</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnOppColourNumber" /><br />
+Given palette entry, return furthest colour number</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnGCOLForMode" /><br />
+Given palette entry, mode and palette pointer, return nearest GCOL</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" /><br />
+Given palette entry, mode and palette pointer, return furthest GCOL</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnColourNumberForMode" /><br />
+Given palette entry, mode and palette pointer, return nearest colour number</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" /><br />
+Given palette entry, mode and palette pointer, return furthest colour number</p>
+
+<subsubsection title="Palette pointers">
+
+<p>Where a palette pointer is used, certain conventions apply:</p>
+
+<p>
+<list>
+<item><p>a palette pointer of -1 means the current palette is used</p></item>
+
+<item><p>a palette pointer of 0 means the default palette for the specified mode.</p></item>
+
+</list>
+</p>
+
+</subsubsection>
+<subsubsection title="Modes">
+
+<p>Similarly, where modes are used:</p>
+
+<p>
+<list>
+<item><p>mode -1 means the current mode.</p></item>
+
+</list>
+</p>
+
+</subsubsection>
+<subsubsection title="Best fit colour">
+
+<p>These calls use a simple algorithm to find the colour in the palette that
+most closely matches the high resolution colour specified in the palette
+entry. It calculates the distance between the colours, which is a weighted
+least squares function. If the desired colour is (R<i>d</i>, B<i>d</i>,
+G<i>d</i>) and a trial colour is (R<i>t</i>, B<i>t</i>, G<i>t</i>),
+then:</p>
+
+<p>distance = redweight &times; (R<sub>t</sub>-R<sub>d</sub>)<sup>2</sup> + greenweight &times; (G<sub>t</sub>-G<sub>d</sub>)<sup>2</sup> + blueweight &times; (B<sub>t</sub>-B<sub>d</sub>)<sup>2</sup></p>
+
+<p>where redweight = 2, greenweight = 4 and blueweight = 1. These weights
+are set for the most visually effective solution to this problem. (In RISC
+OS 2, the weights used were 2, 3 and 1 respectively.)</p>
+
+</subsubsection>
+</subsection>
+<subsection title="Setting a colour">
+
+<p><reference type="swi" name="ColourTrans_SetGCOL" /> will act like ColourTrans_ ReturnGCOL, except that it will set the graphics system GCOL to be as close to the colour you requested as it can. Note that ECF patterns will not yet be used in monochrome modes to reflect grey shades, as they are with Wimp_SetColour.</p>
+
+<p>Similarly, <reference type="swi" name="ColourTrans_SetOppGCOL" /> will set the graphics system GCOL with the opposite of the palette entry passed.</p>
+
+</subsection>
+<subsection title="Conversion">
+
+<p>To convert between the GCOL and colour number format in 256 colour modes, the SWIs <reference type="swi" name="ColourTrans_GCOLToColourNumber" /> and <reference type="swi" name="ColourTrans_ColourNumberToGCOL" /> can be used.</p>
+
+</subsection>
+<subsection title="Sprites and Fonts">
+
+<p><reference type="swi" name="ColourTrans_SelectTable" /> will set up a
+translation table in the buffer. <reference type="swi"
+name="ColourTrans_SelectGCOLTable" /> will set up a list of GCOLs in the
+buffer. See the chapter entitled <reference type="section" name="Pixel
+translation table" href="?sprites"/> for a definition of these tables
+(although the latter call does not in fact relate to sprites).</p>
+
+<p><reference type="swi" name="ColourTrans_ReturnFontColours" /> will try
+and find the best set of logical colours for an anti-alias colour range.
+<reference type="swi" name="ColourTrans_SetFontColours" /> also does this,
+but sets the font manager plotting colours as well. It calls
+Font_SetFontColours, or Font_SetPalette in 256 colour modes - but it works
+out which logical colours to use beforehand. See the chapter entitled
+<reference type="section" name="Colours" href="fontmanager"/> for details of
+using colours and anti-aliasing colours; see also the descriptions of the
+relevant commands later in the same chapter, in <reference type="swi"
+href="fontmanager" name="Font_SetFontColours" /> and <reference type="swi"
+href="fontmanager" name="Font_SetPalette" />.</p>
+
+</subsection>
+<subsection title="Using other palette SWIs">
+
+<p>If a program has changed the palette, then <reference type="swi"
+name="ColourTrans_InvalidateCache" /> must be called. This will reset its
+internal cache. This applies to Font_SetFontColours or Wimp_SetPalette or
+VDU 19 or anything like that, but not to mode change, since this is detected
+automatically.</p>
+
+<p>Under RISC OS 2 you must also call this SWI if output has been switched
+to a sprite, and ColourTrans is to be called while the output is so
+redirected. You must then call it again after output is directed back to the
+screen. Later versions of RISC OS automatically do this for you.</p>
+
+</subsection>
+<subsection title="Colour calibration">
+
+<p>Colour calibration is performed by ColourTrans using a calibration table
+that maps from device colours to standard colours.</p>
+
+<p>The palette in RISC OS maps logical colours to device colours (also known
+as physical colours). When you ask RISC OS to select a colour for you, it
+takes this palette and uses a calibration table to convert the device
+colours to standard colours, giving a (transient) palette that maps logical
+colours to standard colours. It then chooses the closest standard colour to
+the one that you have specified.</p>
+
+<subsubsection title="Calibration tables">
+
+<p>A calibration table is a one-to-one map that fills the device colour
+space, but does not necessarily fill the standard colour space. In fact, it
+consists of three separate mappings: one for each component of the device
+space (red, green and blue on a monitor, for example). Each mapping consists
+of a series of device component/ standard colour pairs.</p>
+
+<p>The pairs are stored as 32-bit words, in the form &hex;BBGGRRDD, where DD
+is the amount of the device component (from 0 to 255), and BBGGRR is the
+standard colour corresponding to that amount. The two other device
+components are presumed to be zero.</p>
+
+<p>The format of the table is:</p>
+
+<p>
+<value-table head-number="Word" head-value="Meaning">
+<value number="0">Number of pairs of component 1 (<i>n1</i>)</value>
+<value number="1">Number of pairs of component 2 (<i>n2</i>)</value>
+<value number="2">Number of pairs of component 3 (<i>n3</i>)</value>
+<value number="3"><i>n1</i> words giving pairs for component 1</value>
+<value number="3 + n1"><i>n2</i> words giving pairs for component 2</value>
+<value number="3 + n1 + n2"><i>n3</i> words giving pairs for component 3</value>
+</value-table>
+</p>
+
+<p>The length of the table is therefore 3 + <i>n1</i> + <i>n2</i> + <i>n3</i> words.</p>
+
+<p>Within each of the three sets of mappings, the words must be sorted in ascending order of device component. To fill the device colour space, there must be entries for device components of 0 and 255, so there must be at least two pairs for each component.</p>
+
+<p>As an example, a minimal calibration table might be:</p>
+
+<p>
+<value-table head-number="Word" head-value="Meaning">
+<value number="&hex;00000002">2 pairs of red component</value>
+<value number="&hex;00000002">2 pairs of green component</value>
+<value number="&hex;00000002">2 pairs of blue component</value>
+<value number="&hex;02010300">Device colour &hex;000000 corresponds to standard colour 020103</value>
+<value number="&hex;0203FDFF">Device colour &hex;0000FF corresponds to standard colour 0203FD</value>
+<value number="&hex;02010300">Device colour &hex;000000 corresponds to standard colour 020103</value>
+<value number="&hex;03FC02FF">Device colour &hex;00FF00 corresponds to standard colour 03FC02</value>
+<value number="&hex;02010300">Device colour &hex;000000 corresponds to standard colour 020103</value>
+<value number="&hex;FF0302FF">Device colour &hex;FF0000 corresponds to standard colour FF0302</value>
+</value-table>
+</p>
+
+<p>
+(Both device and standard colours are given in the format &hex;BBGGRR)
+</p>
+
+<p>The default mapping for the screen is that device colours and standard
+colours are the same. This produces the same effect as earlier uncalibrated
+versions of ColourTrans.</p>
+
+<p>To convert a specific device colour to a standard colour, ColourTrans
+splits the device colour into its three component parts. Then, for each
+component, it uses linear interpolation between the two device components
+'surrounding' the required device component. The standard colours thus
+obtained for each component are then summed to give the final calibrated
+standard colour.</p>
+
+<p>Colour calibration is not available in RISC OS 2.</p>
+
+</subsubsection>
+</subsection>
+</section>
+<section title="Service Calls">
+
+<service-definition name="CalibrationChanged"
+                    number="5B"
+                    description="Screen calibration is changed"
+                    >
+<entry>
+
+<register-use number="1">&hex;5B (reason code) 
+
+</register-use>
+</entry>
+
+<exit>
+<register-use number="1">Must be preserved. This service call should not be claimed</register-use> 
+<register-use number="All" state="preserved" />
+
+</exit>
+
+<use>
+<p>This service is issued by the ColourTrans module when the
+ColourTrans_SetCalibration SWI has been issued. </p> 
+
+<p>It is noticed by the Palette utility in the desktop, which broadcasts a
+Message_PaletteChange.</p> 
+
+<p>This service call is not used by RISC OS 2.</p> 
+
+</use>
+<related>
+<reference type="swi" name="ColourTrans_SetCalibration" />
+</related>
+</service-definition>
+<service-definition name="InvalidateCache"
+                    number="82"
+                    description="Broadcast whenever the cache is flushed within ColourTrans"
+                >
+
+<entry>
+<register-use number="1">&hex;82 (reason code)</register-use>
+</entry>
+
+<exit>
+<register-use number="All" state="preserved" />
+</exit>
+
+<use>
+<p>This service is broadcast whenever the cache is flushed within
+ColourTrans. You should never claim it.</p> 
+
+<p>This service call is not used by RISC OS 2.</p> 
+
+</use>
+<related>
+</related>
+</service-definition>
+</section>
+<section title="SWI Calls">
+
+<swi-definition name="ColourTrans_SelectTable"
+                number="40740"
+                description="Sets up a translation table in a buffer"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+<entry>
+<register-use number="0">source mode, or -1 for current mode, or (if = 256) pointer to sprite, or (if &gt; 256) pointer to sprite area<!-- errata --> 
+</register-use>
+<register-use number="1">source palette pointer, or -1 for current palette,
+or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0
+(as specified by bit 0 of R5)</register-use>
+
+<register-use number="2">destination mode, or -1 for current mode
+</register-use>
+<register-use number="3">destination palette pointer, or -1 for current palette, or 0 for default for the mode
+</register-use>
+<register-use number="4">pointer to buffer, or 0 to return required size of buffer
+</register-use>
+<register-use number="5">flags (used if R0 &ge; 256):
+<bitfield-table>
+ <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
+ <bit number="1">use current palette if sprite doesn't have one; else use default</bit>
+ <bit number="2">use R6 and R7 to specify transfer function</bit>
+ <bit number="24-31">format of table:
+  <value-table>
+   <value number="0">return <reference type="section" name="Pixel translation table" href="?sprites" /></value>
+   <value number="1">return physical palette table</value>
+   <value number="other">reserved</value>
+  </value-table>
+ </bit>
+ <bit number="other" state="reserved" />
+</bitfield-table>
+
+</register-use>
+<register-use number="6">pointer to workspace for transfer function (if R0 &ge; 256, and bit 2 of R5 is set)</register-use>
+<register-use number="7">pointer to transfer function (if R0 &ge; 256, and bit 2 of R5 is set)</register-use>
+</entry>
+
+<exit>
+<register-use number="0-3" state="preserved" />
+<register-use number="4">required size of buffer (if R4 = 0 on entry), or preserved</register-use>
+<register-use number="5-7" state="preserved" />
+</exit>
+
+<use>
+<p>This call sets up a translation table in a buffer - that is, a set of
+colour numbers as used by scaled sprite plotting. You may specify the source
+mode palette either directly, or (except in RISC OS 2) by specifying a
+sprite. See the chapter entitled <reference type="swi" name="Pixel
+translation table" href="?" /> for details of such tables.</p>
+
+<p>You should use this call rather than any other to set up translation
+tables for sprites, as it copes correctly with sprites that have a 256
+colour palette.</p>
+
+<p>If bit 2 of the flags word in R5 is set, then R6 and R7 are assumed to
+specify a transfer routine, which is called to preprocess each palette entry
+before it is converted. The entry point of the routine (as specified in R7)
+is called with the palette entry in R0, and the workspace pointer (as
+specified in R6) in R12. The palette entry must be returned in R0, and all
+other registers preserved.</p>
+
+<p>In RISC OS 2, R0 must be less than 256, and so R5 - R7 are unused.
+Consequently, to use a sprite as the source you first have to copy its
+palette information out from its header. Furthermore, you cannot find the
+required size of the buffer by setting R4 to 0 on entry.</p>
+
+<!-- errata -->
+<p>If R0 is 256 on entry, it is assumed not to point to a sprite area, but
+R1 is still assumed to point to a sprite. This special value is useful if
+you need to use sprites that are not held in a sprite area. For example,
+Draw uses it for sprites that are held in a DrawFile without a preceding
+sprite area control block.</p>
+
+<!-- errata -->
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_GenerateTable" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SelectGCOLTable"
+                number="40741"
+                description="Sets up a list of GCOLs in a buffer"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">source mode, or -1 for current mode, or (if &ge;
+256) pointer to sprite area</register-use>
+
+<register-use number="1">source palette pointer, or -1 for current palette,
+or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0
+(as specified by bit 0 of R5)</register-use>
+
+<register-use number="2">destination mode, or -1 for current mode
+</register-use>
+
+<register-use number="3">destination palette pointer, or -1 for current
+palette, or 0 for default for the mode</register-use>
+
+<register-use number="4">pointer to buffer</register-use>
+
+<register-use number="5">flags (used if R0 &ge; 256):
+ <bitfield-table>
+  <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
+  <bit number="1">use current palette if sprite doesn't have one; else use default</bit>
+  <bit number="2-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0-5" state="preserved" />
+
+</exit>
+
+<use>
+<p>This call, given a source mode and palette (either directly, or - except
+in RISC OS 2 - from a sprite), a destination mode and palette, and a buffer,
+sets up a list of GCOLs in the buffer. The values can subsequently be used
+by passing them to GCOL and Tint.</p>
+
+<p>In RISC OS 2, R0 must be less than 256, and so R5 is unused.
+Consequently, to use a sprite as the source you first have to copy its
+palette information out from its header.</p>
+
+</use>
+
+<related>
+<!-- None --> 
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnGCOL"
+                number="40742"
+                description="Gets the closest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+</entry>
+
+<exit>
+<register-use number="0">GCOL</register-use>
+</exit>
+
+<use>
+<p>This call, given a palette entry, returns the closest GCOL in the current
+mode and palette.</p>
+
+<p>It is equivalent to ColourTrans_ReturnGCOLForMode
+for the given palette entry, with parameters of -1 for both the mode and
+palette pointer.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetGCOL" />
+<reference type="swi" name="ColourTrans_ReturnColourNumber" />
+<reference type="swi" name="ColourTrans_ReturnGCOLForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOL" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+
+
+<swi-definition name="ColourTrans_SetGCOL"
+                number="40743"
+                description="Sets the closest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="3">flags</register-use>
+<register-use number="4">GCOL action 
+
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+<register-use number="2">log2 of bits-per-pixel for current mode
+</register-use>
+<register-use number="3">initial value AND &hex;80</register-use>
+<register-use number="4" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, works out the closest GCOL in the current mode and palette, and sets it. </p> 
+
+<p>
+<bitfield-table>
+<bit number="7" state="set">set background colour</bit>
+<bit number="7" state="clear">set foreground colour</bit>
+<bit number="8" state="set">use ECFs to give a better approximation to the colour</bit>
+<bit number="8" state="clear">don't use ECFs</bit>
+</bitfield-table>
+</p>
+
+<p>The remaining bits of R3 and the top three bytes of R4 are reserved, and
+should be set to zero to allow for future expansion. Bit 8 of R3 is ignored
+in RISC OS 2, which does not support ECF patterns with this call.</p>
+
+<p>Note that if you are using ECF-generating calls, you cannot use the
+returned GCOL to reselect the pattern; you must instead repeat this
+call.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOL" />
+<reference type="swi" name="ColourTrans_SetOppGCOL" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnColourNumber"
+                number="40744"
+                description="Gets the closest colour for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+
+                >
+
+<entry>
+<register-use number="0">palette entry</register-use>
+</entry>
+
+<exit>
+<register-use number="0">colour number</register-use>
+</exit>
+
+<use>
+<p>This call, given a palette entry, returns the closest colour number in
+the current mode and palette.</p>
+
+<p>The colours are not calibrated in RISC
+OS 2, but are calibrated in later versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOL" />
+<reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnGCOLForMode"
+                number="40745"
+                description="Gets the closest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+<register-use number="0">palette entry</register-use>
+<register-use number="1">destination mode, or -1 for current mode
+</register-use>
+<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode 
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0">GCOL</register-use>
+<register-use number="1" state="preserved" />
+<register-use number="2" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, a destination mode and palette, returns the closest GCOL.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOL" />
+<reference type="swi" name="ColourTrans_SetGCOL" />
+<reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnColourNumberForMode"
+                number="40746"
+                description="Gets the closest colour for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="1">destination mode, or -1 for current mode
+</register-use>
+<register-use number="2">palette pointer, or -1 for current palette, or 0
+for default for the mode 
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">colour number</register-use>
+<register-use number="1" state="preserved" />
+<register-use number="2" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, a destination mode and palette, returns
+the closest colour number.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnColourNumber" />
+<reference type="swi" name="ColourTrans_ReturnGCOLForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnOppGCOL"
+                number="40747"
+                description="Gets the furthest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+</exit>
+
+<use>
+<p>This call, given a palette entry, returns the furthest GCOL in the
+current mode and palette.</p>
+
+<p>It is equivalent to ColourTrans_ReturnOppGCOLForMode for the given
+palette entry, with parameters of -1 for both the mode and palette
+pointer.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOL" />
+<reference type="swi" name="ColourTrans_SetOppGCOL" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SetOppGCOL"
+                number="40748"
+                description="Sets the furthest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="3">0 for foreground, or 128 for background
+</register-use>
+<register-use number="4">GCOL action</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+<register-use number="2">log2 of bits-per-pixel for current mode
+</register-use>
+<register-use number="3">initial value AND &hex;80
+</register-use>
+<register-use number="4" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, works out the furthest GCOL in the
+current mode and palette, and sets it.</p>
+
+<p>The top three bytes of R3 and R4 should be zero, to allow for future
+expansion.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetGCOL" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOL" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnOppColourNumber"
+                number="40749"
+                description="Gets the furthest colour for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">colour number</register-use>
+</exit>
+
+<use>
+<p>This call, given a palette entry, returns the furthest colour number in
+the current mode and palette.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnColourNumber" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOL" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnOppGCOLForMode"
+                number="4074A"
+                description="Gets the furthest GCOL for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="1">destination mode or -1 for current mode
+</register-use>
+<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode 
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+<register-use number="1" state="preserved" />
+<register-use number="2" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, a destination mode and palette, returns
+the furthest GCOL.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOLForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOL" />
+<reference type="swi" name="ColourTrans_SetOppGCOL" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnOppColourNumberForMode"
+                number="4074B"
+                description="Gets the furthest colour for a palette entry"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="1">destination mode or -1 for current mode
+
+</register-use>
+<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode 
+
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0">colour number</register-use>
+<register-use number="1" state="preserved" />
+<register-use number="2" state="preserved" />
+</exit>
+
+<use>
+<p>This call, given a palette entry, a destination mode and palette, returns
+the furthest colour number.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
+<reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
+<reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_GCOLToColourNumber"
+                number="4074C"
+                description="Translates a GCOL to a colour number"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">GCOL</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">colour number</register-use>
+</exit>
+
+<use>
+<p>This call changes the value passed from a GCOL to a colour number.</p>
+
+<p>You should only call this SWI for 256 colour modes; the results will be
+meaningless for any others.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ColourNumberToGCOL" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ColourNumberToGCOL"
+                number="4074D"
+                description="Translates a colour number to a GCOL"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">colour number 
+
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL 
+
+</register-use>
+</exit>
+
+<use>
+<p>This call changes the value passed from a colour number to a GCOL.</p>
+
+<p>You should only call this SWI for 256 colour modes; the results will be meaningless for any others.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_GCOLToColourNumber" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReturnFontColours"
+                number="4074E"
+                    description="Finds the best range of anti-alias colours to match a pair of palette entries"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">font handle, or 0 for the current font
+
+</register-use>
+<register-use number="1">background palette entry
+
+</register-use>
+<register-use number="2">foreground palette entry
+
+</register-use>
+<register-use number="3">maximum foreground colour offset (0 - 14) 
+
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0" state="preserved" />
+<register-use number="1">background logical colour (preserved if in 256 colour mode)
+</register-use>
+<register-use number="2">foreground logical colour</register-use>
+<register-use number="3">maximum sensible colour offset (up to R3 on entry) 
+</register-use>
+</exit>
+
+<use>
+<p>This call, given background and foreground colours and the number of
+anti-aliasing colours desired, finds the maximum range of colours that can
+sensibly be used. So for the given pair of palette entries, it finds the
+best fit in the current palette, and then inspects the other available
+colours to deduce the maximum possible amount of anti-aliasing up to the
+limit in R3.</p>
+
+<p>If anti-aliasing is desirable, you should set R3 = 14 on entry; otherwise
+set R3 = 0 for monochrome.</p>
+
+<p>The values in R1 - R3 on exit are suitable for passing to
+Font_SetFontColours. You can also include them in a font string in a control
+(18) sequence, although we don't recommend this as the printer drivers do
+not properly support this feature.</p>
+
+<p>Note that in 256 colour modes, you can only set 16 colours before
+previously returned information becomes invalid. Therefore, if you are using
+this SWI to obtain information to subsequently pass to the font manager, do
+not use more than 16 colours.</p>
+
+<p>Also note that in 256 colour modes, the font manager's internal palette
+will be set, with all 16 entries being cycled through by ColourTrans.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+<p>See <reference type="swi" name="Font_SetFontColours" href="fontmanager"/>
+of the <reference type="section" name="The Font Manager"
+href="fontmanager"/> for further details of the parameters used in this
+call.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetFontColours" />
+<reference type="swi" name="Font_SetFontColours" href="fontmanager" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SetFontColours"
+                number="4074F"
+                description="Sets the best range of anti-alias colours to match a pair of palette entries"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">font handle, or 0 for the current font
+</register-use>
+<register-use number="1">background palette entry</register-use>
+<register-use number="2">foreground palette entry</register-use>
+<register-use number="3">maximum foreground colour offset (0 - 14) 
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0" state="preserved" />
+<register-use number="1">background logical colour (preserved if in 256 colour mode)
+</register-use>
+<register-use number="2">foreground logical colour</register-use>
+<register-use number="3">maximum sensible colour offset (up to R3 on entry)
+</register-use>
+</exit>
+
+<use>
+<p>This call, given a pair of palette entries, finds the best available
+range of anti-alias colours in the current palette, and sets the font
+manager to use these colours. It is the recommended way to set font colours,
+as the printer drivers properly support this call. A font string control
+(19) sequence uses this call, and so may also be used when printing.</p>
+
+<p>The colours are not calibrated in RISC OS 2, but are calibrated in later
+versions.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnFontColours" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_InvalidateCache"
+                number="40750"
+                description="Informs ColourTrans that the palette has been changed by some other means"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call must be issued whenever the palette has changed since
+ColourTrans was last called. This forces ColourTrans to update its cache.
+Note that colour changes due to a mode change are detected; you only need to
+use this if another of the palette change operations was used.</p>
+
+<p>Under RISC OS 2 you must also call this SWI if output has been switched
+to a sprite, and ColourTrans is to be called while the output is so
+redirected. You must then call it again after output is directed back to the
+screen. For example, the palette utility on the icon bar calls this SWI when
+you finish dragging one of the RGB slider bars. Later versions of RISC OS
+automatically do this for you.</p>
+
+</use>
+
+<related>
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+
+
+<swi-definition name="ColourTrans_SetCalibration"
+                number="40751"
+                description="Sets the calibration table for the screen"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">pointer to calibration table</register-use>
+</entry>
+
+<exit>
+
+</exit>
+
+<use>
+<p>This call copies the calibration table pointed to by R0 into the RMA as
+the new calibration table for the screen. If the call fails due to lack of
+room in the RMA then the calibration will be set to the default calibration
+for the screen, and the 'No room in RMA' error will be passed back. Another
+possible error is 'Bad calibration table', given if the device component
+pairs do not cover the full range &hex;00 to &hex;FF.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReadCalibration" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReadCalibration"
+                number="40752"
+                description="Reads the calibration table for the screen"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">0 to read required size of table, or pointer to buffer 
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0" state="preserved" />
+<register-use number="1">size of table (if R0 = 0 on entry)</register-use>
+</exit>
+
+<use>
+<p>This call reads the calibration table for the screen into the buffer
+pointed to by R0, which should be large enough to contain the complete
+table. Ideally you should first issue this call with R0=0 to read the size
+of the table, then allocate space, and then issue this call again to read
+the table.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetCalibration" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertDeviceColour"
+                number="40753"
+                description="Converts a device colour to a standard colour"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="1">24-bit device colour (&hex;BBGGRR00 for the screen)
+
+</register-use>
+<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use 
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="2">24-bit standard colour (&hex;BBGGRR00) 
+</register-use>
+</exit>
+
+<use>
+<p>This call allows applications to read, say, screen colours, and find the standard colours to which they correspond.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertDevicePalette" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertDevicePalette"
+                number="40754"
+                description="Converts a device palette to standard colours"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">number of colours to convert</register-use>
+<register-use number="1">pointer to table of 24-bit device colours
+</register-use>
+<register-use number="2">pointer to table to store standard colours
+</register-use>
+<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use 
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0-3" state="preserved" /> 
+</exit>
+
+<use>
+<p>This call allows printer drivers to use the same calibration calculation
+code for their conversions between device and standard colours as the screen
+does. The printer device palette can be set up and then converted using this
+call to the standard colours using the printer's calibration table. This
+call is mainly provided to ease the load on the writers of printer
+drivers.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertDeviceColour" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertRGBToCIE"
+                number="40755"
+                description="Converts RISC OS RGB colours to industry standard CIE colours"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">CIE X tristimulus value</register-use>
+<register-use number="1">CIE Y tristimulus value</register-use>
+<register-use number="2">CIE Z tristimulus value</register-use>
+</exit>
+
+<use>
+<p>This call converts RISC OS RGB colours to industry standard CIE colours,
+allowing easy interchange with other systems. The CIE standard that is
+output is the XYZ tristimulus values.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers, with 16 bits
+below the point and 16 bits above the point. We suggest that you use numbers
+in the range 0 - 1, for compatibility with other conversion SWIs such as
+ColourTrans_ConvertRGBToCMYK.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertCIEToRGB" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertCIEToRGB"
+                number="40756"
+                description="Converts industry standard CIE colours to RISC OS RGB colours"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">CIE X tristimulus value</register-use>
+<register-use number="1">CIE Y tristimulus value</register-use>
+<register-use number="2">CIE Z tristimulus value</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</exit>
+
+<use>
+<p>This call converts industry standard CIE colours to RISC OS RGB colours,
+allowing easy interchange with other systems. The CIE standard that is
+accepted is the XYZ tristimulus values.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers, with 16 bits
+below the point and 16 bits above the point. We suggest that you use numbers
+in the range 0 - 1, for compatibility with other conversion SWIs such as
+ColourTrans_ConvertCMYKToRGB.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertRGBToCIE" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_WriteCalibrationToFile"
+                number="40757"
+                description="Saves the current calibration to a file"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+<entry>
+
+<register-use number="0">flags</register-use>
+<register-use number="1">file handle of file to save calibration to 
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0" state="corrupted" />
+</exit>
+
+<use>
+<p>This call saves the current calibration to a file. It does so by creating
+a list of * Commands which will recreate the current calibration.</p>
+
+<p>If bit 0 of R0 is clear then the calibration will only be saved if it is
+not the default calibration. If bit 0 of R0 is set then the calibration will
+be saved even if it is the default calibration.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="vector" name="ColourV" href="?" />
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertRGBToHSV"
+                number="40758"
+                description="Converts RISC OS RGB colours into corresponding hue, saturation and value"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">hue</register-use>
+<register-use number="1">saturation</register-use>
+<register-use number="2">value</register-use>
+</exit>
+
+<use>
+<p>This call converts RISC OS RGB colours into corresponding hue, saturation
+and value.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers, with 16 bits
+below the point and 16 bits above the point. Hue ranges from 0 - 360 with no
+fractional element, whilst the remaining parameters are in the range 0 - 1
+and may have fractional elements.</p>
+
+<p>When dealing with achromatic colours, hue is undefined.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertHSVToRGB" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertHSVToRGB"
+                number="40759"
+                description="Converts hue, saturation and value into corresponding RISC OS RGB colours"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">hue</register-use>
+<register-use number="1">saturation</register-use>
+<register-use number="2">value</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</exit>
+
+<use>
+<p>This call converts hue, saturation and value into corresponding RISC OS
+RGB colours.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers, with 16 bits
+below the point and 16 bits above the point. Hue ranges from 0 - 360 with no
+fractional element, whilst the remaining parameters are in the range 0 - 1
+and may have fractional elements.</p>
+
+<p>An error is generated if both the hue and saturation are 0; for this
+reason we recommend that when using this call 0 &lt; hue &le; 360.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertRGBToHSV" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertRGBToCMYK"
+                number="4075A"
+                description="Converts RISC OS RGB colours into the CMYK model"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">cyan component</register-use>
+<register-use number="1">magenta component</register-use>
+<register-use number="2">yellow component</register-use>
+<register-use number="3">key (black) component</register-use>
+</exit>
+
+<use>
+<p>This call converts RISC OS RGB colours into the CMY (cyan/magenta/yellow)
+model with a K (key - ie black) additive, allowing easy preparation of
+colour separations.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers in the range 0 -
+1, with 16 bits below the point and 16 bits above the point. The 'K' acts as
+a black additive and is a value equally subtracted or added to the given CMY
+values.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertCMYKToRGB" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ConvertCMYKToRGB"
+                number="4075B"
+                description="Converts from the CMYK model to RISC OS RGB colours"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">cyan component</register-use>
+<register-use number="1">magenta component</register-use>
+<register-use number="2">yellow component</register-use>
+<register-use number="3">key (black) component</register-use>
+</entry>
+
+<exit>
+<register-use number="0">red component</register-use>
+<register-use number="1">green component</register-use>
+<register-use number="2">blue component</register-use>
+</exit>
+
+<use>
+<p>This call converts from the CMY (cyan/magenta/yellow) model with a K (key
+- ie black) additive to RISC OS RGB colours, allowing easy conversion from
+colour separations.</p>
+
+<p>All parameters are passed as fixed point 32 bit numbers in the range 0 -
+1, with 16 bits below the point and 16 bits above the point. The 'K' acts as
+a black additive and is a value equally subtracted or added to the given CMY
+values.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ConvertRGBToCMYK" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_ReadPalette"
+                number="4075C"
+                description="Reads either the screen's palette, or a sprite's palette"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">source mode, or -1 for current mode, or (if &ge; 256) pointer to sprite area
+</register-use>
+<register-use number="1">source palette pointer, or -1 for current palette, or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0 (as specified by bit 0 of R4)
+
+</register-use>
+<register-use number="2">pointer to buffer, or 0 to return required size in R3
+
+</register-use>
+<register-use number="3">size of buffer (if R2 &ne; 0)</register-use>
+<register-use number="4">flags (used if R0 &ge; 256):
+ <bitfield-table>
+  <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
+  <bit number="1">Return flashing colours; else don't</bit>
+  <bit number="2-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="2">pointer to next free word in buffer</register-use>
+<register-use number="3">remaining size of buffer</register-use>
+</exit>
+
+<use>
+<p>This call reads either the screen's palette, or a sprite's palette. It is
+the recommended way of doing so. It provides a way for applications to
+enquire about the palette and always read the absolute values, no matter
+what the hardware is capable of.</p>
+
+<p>All palette entries are returned as true 24bit RGB, passing through the
+calibration if required. In 256 colour modes the palette is returned fully
+expanded (ie 256 palette entries, rather than the base 16 entries used by
+VIDC).</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_WritePalette" />
+<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="PaletteV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_WritePalette"
+                number="4075D"
+                description="Writes to either the screen's palette, or to a sprite's palette"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">-1 to write current mode's palette, or pointer to sprite area
+
+</register-use>
+<register-use number="1">-1 to write current palette, else ignored (if R0 = -1); or (if R0 &ge; 0) pointer to sprite name/sprite in area pointed to by R0 (as specified by R4)
+
+</register-use>
+<register-use number="2">pointer to palette to write<br />
+R3 reserved (must be zero)
+
+</register-use>
+<register-use number="4">flags (used if R0 &ge; 0):<br />
+ <bitfield-table>
+  <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
+  <bit number="1">flashing colours; else not present</bit>
+  <bit number="2-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+</exit>
+
+<use>
+<p>This call writes to either the screen's palette, or to a sprite's
+palette.</p>
+
+<p>256 colour palettes are first compacted to the base 16 entries used by
+VIDC - but only if the compacted palette expands via the tint mechanism to
+the original palette. Otherwise the full 256 colours are written.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReadPalette" />
+<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="PaletteV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SetColour"
+                number="4075E"
+                description="Changes the foreground or background colour to a GCOL number"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">GCOL number</register-use>
+<register-use number="3">flags:
+ <bitfield-table>
+  <bit number="7">set background, else foreground</bit>
+  <bit number="9">set text colour</bit>
+ </bitfield-table>
+
+</register-use>
+<register-use number="4">GCOL action</register-use>
+</entry>
+
+<exit>
+<register-use number="All" state="preserved" /> 
+</exit>
+
+<use>
+<p>This call changes the foreground or background colour to a GCOL number
+(as returned from ColourTrans_ReturnGCOL). You should only use it for GCOL
+numbers returned for the current mode.</p>
+
+<p>If bit 9 of R3 is set on entry, then this call sets the text colours
+rather than the graphics colours.</p>
+
+<p>This call is not available in RISC OS 2.</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_ReturnGCOL" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_MiscOp"
+                number="4075F"
+                internal="yes"
+                description="This call is for internal use only. It is not available in RISC OS 2."
+                >
+
+</swi-definition>
+<swi-definition name="ColourTrans_WriteLoadingsToFile"
+                number="40760"
+                description="Writes a * Command to a file that will set the ColourTrans error loadings"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="1">file handle</register-use>
+</entry>
+
+<exit>
+<register-use number="All" state="preserved" />
+</exit>
+
+<use>
+<p>This call writes a * Command to the specified file that will set the
+error loadings within the ColourTrans module. This call is mainly provided
+to support desktop saving of the loadings.</p>
+
+<p>This call is not available in RISC OS 2, nor in RISC OS 3 (version
+3.00).</p>
+
+</use>
+
+<related>
+<!-- None --> 
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SetTextColour"
+                number="40761"
+                description="Changes the text foreground or background colour to a GCOL number"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="3">flags word:
+ <bitfield-table>
+  <bit number="7">set background colour; else set foreground colour</bit>
+  <bit number="0-6" state="reserved" />
+  <bit number="8-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+<register-use number="3" state="preserved" />
+</exit>
+
+<use>
+<p>This call changes the text foreground or background colour to the GCOL
+number (as returned from ColourTrans_ReturnGCOL) that is closest to the
+specified palette entry. You should only use it for GCOL numbers returned
+for the current mode.</p>
+
+<p>This call is not available in RISC OS 2, nor in RISC OS 3 (version
+3.00).</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetOppTextColour" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_SetOppTextColour"
+                number="40762"
+                description="Changes the text foreground or background colour to a GCOL number"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">palette entry</register-use>
+<register-use number="3">flags word:
+ <bitfield-table>
+  <bit number="7">set background colour; else set foreground colour</bit>
+  <bit number="0-6" state="reserved" />
+  <bit number="8-31" state="reserved" />
+ </bitfield-table>
+</register-use>
+</entry>
+
+<exit>
+
+<register-use number="0">GCOL</register-use>
+<register-use number="3" state="preserved" />
+</exit>
+
+<use>
+<p>This call changes the text foreground or background colour to the GCOL
+number (as returned from ColourTrans_ReturnGCOL) that is furthest from the
+specified palette entry. You should only use it for GCOL numbers returned
+for the current mode.</p>
+
+<p>This call is not available in RISC OS 2, nor in RISC OS 3 (version
+3.00).</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SetTextColour" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+<swi-definition name="ColourTrans_GenerateTable"
+                number="40763"
+                description="Sets up a translation table in a buffer"
+                irqs="enabled"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no"
+                >
+
+<entry>
+
+<register-use number="0">source mode, or -1 for current mode, or (if = 256) pointer to sprite, or (if &gt; 256) pointer to sprite area<!-- errata --> 
+</register-use>
+<register-use number="1">source palette pointer, or -1 for current palette,
+or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0
+(as specified by bit 0 of R5)
+</register-use>
+<register-use number="2">destination mode, or -1 for current mode
+</register-use>
+<register-use number="3">destination palette pointer, or -1 for current
+palette, or 0 for default for the mode
+</register-use>
+<register-use number="4">pointer to buffer, or 0 to return required size of
+buffer
+</register-use>
+<register-use number="5">flags:<br />
+<bitfield-table>
+ <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
+ <bit number="1">use current palette if sprite doesn't have one; else use default</bit>
+ <bit number="2">use R6 and R7 to specify transfer function</bit>
+ <bit number="24-31">format of table:
+  <value-table>
+   <value number="0">return <reference type="section" name="Pixel translation table" href="?sprites" /></value>
+   <value number="1">return physical palette table</value>
+   <value number="other">reserved</value>
+  </value-table>
+ </bit>
+ <bit number="other" state="reserved" />
+</bitfield-table>
+</register-use>
+<register-use number="6">pointer to workspace for transfer function (if bit
+2 of R5 is set)
+</register-use>
+<register-use number="7">pointer to transfer function (if bit 2 of R5 is
+set)
+</register-use>
+</entry>
+
+<exit>
+<register-use number="0-3" state="preserved" />
+<register-use number="4">required size of buffer (if R4 = 0 on entry), or preserved</register-use>
+<register-use number="5-7" state="preserved" />
+</exit>
+
+<use>
+<p>This call is exactly the same as ColourTrans_SelectTable (see <reference
+type="swi" name="ColourTrans_SelectTable" />), except that it assumes that
+R5 always contains a valid flags word.</p>
+
+<p>This call is not available in RISC OS 2, nor in RISC OS 3 (version
+3.00).</p>
+
+</use>
+
+<related>
+<reference type="swi" name="ColourTrans_SelectTable" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</swi-definition>
+</section>
+<section title="* Commands">
+
+<command-definition name="ColourTransLoadings"
+                    description="Sets the red, green and blue weightings used when trying to match colours"
+                    >
+
+<syntax>
+ <userreplace>redweight</userreplace>
+ <userreplace>greenweight</userreplace>
+ <userreplace>blueweight</userreplace> 
+</syntax>
+
+<!-- parameters -->
+
+<parameter name="redweight">red weighting used when trying to match colours</parameter>
+
+<parameter name="greenweight">green weighting used when trying to match colours</parameter>
+<parameter name="blueweight">blue weighting used when trying to match colours</parameter> 
+
+<use>
+<p>*ColourTransLoadings sets the red, green and blue weightings used when trying to match colours (as described in <reference type="subsection" name="Finding a colour" />).</p>
+
+<p>The main purpose of this command is to enable the Task Manager to save
+the calibration when a desktop save is done. You should not use it
+yourself.</p>
+
+<p>This command is not available in RISC OS 2, nor in RISC OS 3 (version
+3.00).</p>
+
+</use>
+
+<example>
+<command>*ColourTransLoadings &amp;2 &amp;4 &amp;1</command>
+</example>
+
+<related>
+<!-- None --> 
+<reference type="swi" name="ColourTrans_WriteLoadingsToFile" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</command-definition>
+<command-definition name="ColourTransMap"
+                    description="Sets up a calibration table from its parameters"
+                    >
+
+<syntax>
+ <userreplace>RRGGBBDD</userreplace>
+ <userreplace>RRGGBBDD</userreplace>
+ <userreplace>RRGGBBDD</userreplace>
+ <userreplace>RRGGBBDD</userreplace>
+ <userreplace>etc.</userreplace> 
+</syntax>
+
+<!-- parameters -->
+<parameter name="RRGGBBDD">8 hex digits, such that &hex;RRGGBBDD is the number to be placed in the calibration table</parameter> 
+
+<use>
+<p>*ColourTransMap sets up a calibration table from its parameters. The
+number of parameters passed for each component must have been specified in a
+previous *ColourTransMapSize command.</p>
+
+<p>The main purpose of this command is to enable the Task Manager to save
+the calibration when a desktop save is done.</p>
+
+<p>This command is not available in RISC OS 2.</p>
+
+</use>
+
+<example>
+
+<command>*ColourTransMap 01000000 FF0000FF 00020000 00FE00FF <i>etc.</i></command>
+
+</example>
+
+<related>
+<reference type="command" name="ColourTransMapSize" />
+<reference type="swi" name="ColourTrans_WriteCalibrationToFile" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</command-definition>
+<command-definition name="ColourTransMapSize"
+                    description="Sets how parameters will be passed in the next *ColourTransMap command"
+                    >
+
+<syntax>
+ <userreplace>n1</userreplace>
+ <userreplace>n2</userreplace>
+ <userreplace>n3</userreplace> 
+</syntax>
+
+<!-- parameters -->
+
+<parameter name="n1">number of parameters to be passed in *ColourTransMap for component 1</parameter>
+
+<parameter name="n2">number of parameters to be passed in *ColourTransMap for component 2</parameter>
+<parameter name="n3">number of parameters to be passed in *ColourTransMap for component 3</parameter> 
+
+<use>
+<p>*ColourTransMapSize sets the number of parameters that will be passed in
+the next *ColourTransMap command for each component. It hence also sets the
+size of the resultant calibration table, which will be (3 + n1 + n2 + n3)
+words long. The values n1, n2 and n3 are given in the reverse order to a
+standard calibration table.</p>
+
+<p>The main purpose of this command is to enable the Task Manager to save
+the calibration when a desktop save is done.</p>
+
+<p>This command is not available in RISC OS 2.</p>
+
+</use>
+
+<example>
+
+<command>*ColourTransMapSize 8 10 8</command>
+
+</example>
+
+<related>
+<reference type="command" name="ColourTransMap" />
+<reference type="swi" name="ColourTrans_WriteCalibrationToFile" />
+<reference type="vector" name="ColourV" href="?" />
+
+</related>
+</command-definition>
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>

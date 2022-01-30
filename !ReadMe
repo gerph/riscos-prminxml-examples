@@ -1,0 +1,33 @@
+Examples
+--------
+
+These are some examples of documents produced using the XML format. The
+majority have been released by RISCOS Ltd for use with this distribution :
+
+  arp/xml         - *ARP command documentation.
+  cdfs/xml        - CDFS documentation from PRM 5a.
+  colourtrans/xml - ColourTrans documentation from PRM 3.
+  dragasprite/xml - DragASprite documentation from PRM 3.
+  finger/xml      - *Finger command documentation.
+  freeway/xml     - Freeway documentation from AppNote.
+  host/xml        - *Host command documentation.
+  hourglass/xml   - Hourglass documentation from PRM 2.
+  ramfs/xml       - RAMFS documentation from PRM 2.
+  squash/xml      - Squash documentation from PRM 4.
+  taskmanager/xml - TaskManager documentation from PRM 3.
+
+Two other documents have been supplied :
+
+  amplayer/xml    - Documentation for the AMPlayer module, an extensive
+                    document.
+  basictokenise/xml - Documentation for a BASIC tokenisation command line
+                    tool.
+  choices/xml     - Documentation on the use of Choices paths.
+  colourswatch/xml - ColourSwatch Toolbox Window gadget documentation.
+  fontmap/xml     - FontMap module used for translating between font forms.
+  optionswindow/xml - OptionsWindow Toolbox object documentation.
+  ssb/xml         - SharedSoundBuffers module documentation.
+  zlib/xml        - ZLib module documentation.
+
+-- 
+Gerph <gerph@gerph.org>

@@ -1,0 +1,702 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
+                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<riscos-prm>
+
+<!-- Document declares itself as RISC OS PRMs: Volume 5a: Chapter 113: CDs and CD-ROMs -->
+
+<chapter title="CDs and CD-ROMs">
+
+<section title="Introduction">
+
+<p>Support has been added to RISC OS 3.6 for CDs and CD-ROMs. This software was previously separately available, and was typically supplied in a ROM on the SCSI card used to interface to a SCSI-based CD-ROM drive.</p>
+
+<p>The software provides a filing system with which you can access files on a CD-ROM that conforms to the widely used ISO 9660 standard. It also provides commands with which you can play audio CDs, starting, stopping and pausing wherever you like. You can read audio data directly from a CD, provided the CD-ROM drive you are using supports this facility.</p>
+
+<p>CDs can store about 75 minutes of audio data. As CD-ROMs, they can be used to store about 660 MB of data, making CDs suitable for mass data applications and as an affordable publishing medium.</p>
+
+<subsection title="The future of CD-related modules">
+
+<p><strong>The SWI interface has never been well documented. RISCOS Ltd
+intend to address this shortly. If you wish to write applications that use
+these SWIs, you should:</strong></p>
+
+<p>
+<list>
+<item><p><strong>Contact RISCOS Ltd for details of the SWIs.</strong></p></item>
+<item><p><strong>Write your application so that code that calls the SWIs is separate from the rest of your application, and can be easily replaced in the future.</strong></p></item>
+</list>
+</p>
+
+<p><strong>We do document the * Commands provided by the CDFS module, solely so that you can use them from the command line. These may also become obsolete in the future, and you should treat them in the same way as SWIs when writing applications.</strong></p>
+
+<p>You will also need details of these SWIs if you wish to write a soft-loadable driver to support a new type of CD-ROM drive under the current CD system. Again, you should contact RISCOS Ltd for further details.</p>
+
+</subsection>
+<subsection title="CDFS">
+
+<p>The CDFS module is responsible for interpreting the data on a CD-ROM that uses the ISO 9660 standard, and ensuring the RISC OS filing system is properly supported.</p>
+
+<p>CDFS is implemented as a FileSwitch-based filing system rather than as a FileCore module, because some aspects of CD-ROMs such as directory size, disc size and filename length can exceed limitations imposed by FileCore. Consequently you can use the standard FileSwitch SWIs - such as OS_Byte, OS_File, OS_Find and OS_GBPB - and * Commands to read files and data. Obviously you cannot write to disc, as CDs are not a writable medium; CDFS is a read-only filing system, and gives an error if you make a call that attempts to write data.</p>
+
+<p>Because CDFS supports standard FileSwitch calls, correctly written applications will be able to use the CDFS filing system without modification.</p>
+
+<p><strong>This 'standard FileSwitch interface' will remain supported in the next release of RISC OS.</strong></p>
+
+</subsection>
+</section>
+<section title="* Commands">
+
+<command-definition name="Bye"
+                    description="Ends a CDFS session"
+                    >
+<syntax>
+</syntax>
+
+<!-- parameters -->
+<!-- None --> 
+
+<use>
+<p>*Bye ends a CDFS session by closing all files, unsetting all directories and libraries, forgetting all CD-ROM names and parking the heads of CD-ROM drives to their 'transit position' so that they can be moved without risking damage to the read head.</p> <p>You should check that CDFS is the current filing system before you use this command, or alternatively if another filing system is your current one, you can type:</p>
+
+<p><userinput>*CDFS:Bye</userinput></p>
+
+</use>
+
+<example>
+
+<p><userinput>*Bye</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Close" href="fileswitch.html" />
+<reference type="command" name="Dismount" />
+<reference type="command" name="Shut" href="fileswitch.html" />
+<reference type="command" name="ShutDown" href="fileswitch.html" />
+
+</related>
+</command-definition>
+<command-definition name="CDDevices"
+                    description="*CDDevices displays all the CD devices connected, and information about them"
+                    >
+<syntax>
+</syntax>
+
+<!-- parameters -->
+<!-- None --> 
+
+<use>
+<p>*CDDevices displays all the CD devices connected, their product name, capacity, firmware revision, and their SCSI ID (displayed as device, LUN, and card; or as zeroes for non-SCSI devices). In more detail:</p>
+
+<p>
+<list type="unordered">
+<item><p>Drive - is the logical drive number assigned by CDFS</p></item>
+
+<item><p>Dev, Lun and Card - are the device ID, logical unit and card numbers that together make up the drive's SCSI address</p></item>
+
+<item><p>Product - is a brief identification of the CD-ROM drive provided by its manufacturer</p></item>
+
+<item><p>Capacity - is the total amount of information (both data and audio) on the CD currently in the drive, or 'Unknown' if there is no readable CD in the drive</p></item>
+
+<item><p>Firmware - is the version of the manufacturer's firmware fitted to the drive.</p></item>
+</list>
+</p>
+
+<p>Unrecognised drive types are omitted from the list.</p>
+
+<p>The information returned is liable to change in future versions; you should not rely on its content or format.</p>
+
+</use>
+
+<example>
+<p>
+<userinput>*CDDevices</userinput>
+<systemoutput>
+Drive  Dev  LUN  Card Product              Capacity      Firmware<br />
+00     0    0    0    CD-ROM CR-571        413 Mbytes    1.0e<br />
+</systemoutput></p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+<command-definition name="CDFS"
+                    description="Selects the CD-ROM Filing System as the current filing system"
+                    >
+
+<syntax>
+</syntax>
+
+<!-- parameters -->
+<!-- None --> 
+
+<use>
+<p>*CDFS selects the CD-ROM Filing System as the filing system for subsequent operations. Remember that it is not necessary to switch filing systems if you use the full pathnames of objects. For example, you can refer to NetFS objects (on a file server, say) when CDFS is the current filing system.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*CDFS</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="ADFS" href="adfs.html" />
+<reference type="command" name="Net" href="netfs.html" />
+<reference type="command" name="Ram" href="ramfs.html" />
+<reference type="command" name="ResourceFS" href="resourcefs.html" />
+
+</related>
+</command-definition>
+<command-definition name="CDSpeed"
+                    description="Displays or sets the read speed of a CD-ROM drive"
+                    >
+
+<syntax>
+<optional>
+<userreplace>drive</userreplace> 
+<optional>
+<userreplace>speed</userreplace>
+</optional>
+
+</optional>
+ 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<parameter name="speed">the new read speed for that drive:
+<value-table>
+<value number="1">standard speed</value>
+<value number="2">double speed</value>
+<value number="255">maximum speed</value>
+</value-table>
+</parameter> 
+
+<use>
+<p>*CDSpeed displays or sets the read speed of the given CD-ROM drive, or of the current drive if none is specified. To set the speed, you must specify both the drive number and the new speed.</p> <p>Note that many drives only support a single read speed; if you attempt to set their read speed, you will get an 'Invalid parameter' error.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*CDSpeed</userinput>
+<systemoutput>Current speed setting is 2</systemoutput></p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+<command-definition name="Configure CDROMBuffers"
+                    description="Sets the configured amount of memory reserved for CD-ROM buffering"
+                    >
+
+<syntax>
+ <userreplace>size</userreplace>
+ <optional><text>K</text></optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="size">the size of memory to reserve, in kilobytes: can be 0, 8, 16, 32, 64, 128, 256 or 512</parameter> 
+
+<use>
+<p>*Configure CDROMBuffers sets the configured amount of memory reserved for CD-ROM buffering, in kilobytes. This can be 0K, 8K, 16K, 32K, 64K, 128K, 256K, or 512K. If you specify any other size, then the next lowest value will be set.</p> <p>The buffer space is used for a number of tasks such as cacheing blocks of data (ie 2048 bytes) and disc specific information - but it is mostly used to cache directory information. This saves accessing a directory and all its parent directories each time a request is made from it. With the slow seek time of CD-ROMs, this saving gives a significant performance increase, especially for deeply nested directories.</p>
+
+<p>The performance of CDFS very much depends on it having adequate buffer space available. The desirable amount depends on various things: in particular, CDFS caches information for each disc in use, so using multiple CDs requires extra buffer space. Also, discs holding more objects have more directory information to cache. As a rough guide, a buffer size of 16 Kbytes is normally adequate for a single average CD.</p>
+
+<p>To save memory usage, CDFS does not load at boot time if the computer is configured to have zero CD-ROM drives, and so this command will not be available. However, you can always use the Configure application to change all CDFS configuration settings, even if CDFS itself is not loaded.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*Configure CDROMBuffers 64K</userinput></p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+<command-definition name="Configure CDROMDrives"
+                    description="Sets the configured number of CD-ROM drives recognised at power on"
+                    >
+<syntax>
+ <userreplace>n</userreplace> 
+</syntax>
+
+<!-- parameters -->
+<parameter name="n">the number of CD-ROM drives, in the range 0 - 27</parameter> 
+
+<use>
+<p>*Configure CDROMDrives sets the configured number of CD-ROM drives recognised at power on.</p> <p>To save memory usage, CDFS does not load at boot time if the computer is configured to have zero CD-ROM drives, and so this command will not be available. However, you can always use the Configure application to change all CDFS configuration settings, even if CDFS itself is not loaded.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*Configure CDROMDrives 1</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Configure Floppies" href="adfs.html" />
+<reference type="command" name="Configure HardDiscs" href="adfs.html" />
+<reference type="command" name="Configure IDEDiscs" href="adfs.html" />
+
+</related>
+</command-definition>
+<command-definition name="Dismount"
+                    description="Ensures that it is safe to finish using a CD-ROM"
+                    >
+
+<syntax>
+ 
+<optional>
+<userreplace>disc_spec</userreplace>
+</optional>
+ 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="disc_spec">the name of the CD-ROM or number of the CD-ROM drive</parameter> 
+
+<use>
+<p>*Dismount ensures that it is safe to finish using a CD-ROM by closing all its files, unsetting all its directories and libraries, forgetting its disc name, and parking its read head. If no CD-ROM is specified, the current CD-ROM is used as the default. *Dismount is useful before removing a particular CD-ROM; however, the *Shutdown command is usually to be preferred, especially when switching off the computer.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Dismount</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Mount" />
+<reference type="command" name="ShutDown" href="fileswitch.html" />
+
+</related>
+</command-definition>
+<command-definition name="Drive"
+                    description="Sets the current CD-ROM drive"
+                    >
+
+<syntax>
+ <userreplace>drive</userreplace> 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">the number of the CD-ROM drive, from 0 - 27</parameter> 
+
+<use>
+<p>*Drive sets the current CD-ROM drive if NoDir is set. Otherwise, *Drive has no meaning.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Drive 3</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Dir" href="fileswitch.html" />
+<reference type="command" name="NoDir" href="fileswitch.html" />
+
+</related>
+</command-definition>
+<command-definition name="Eject"
+                    description="Ejects the disc from a CD-ROM drive"
+                    >
+
+<syntax>
+ <optional>
+  <userreplace>drive</userreplace>
+ </optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*Eject ejects the disc from the given CD-ROM drive, or from the current
+drive if none is specified. This command will only work if the drawer has
+not been locked by the *Lock command (see <reference type="command"
+name="Lock" />), and is electronically operated.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Eject 0</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Lock" />
+<reference type="command" name="Unlock" />
+
+</related>
+</command-definition>
+<command-definition name="Lock"
+                    description="Locks the disc in a CD-ROM drive, disabling the Eject button"
+                    >
+
+<syntax>
+ 
+<optional>
+<userreplace>drive</userreplace>
+</optional>
+ 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*Lock locks the disc in the given CD-ROM drive, disabling the Eject
+button. If no drive is specified, the current drive is locked. You must call
+the <reference type="command" name="Unlock" /> command before the disc can
+again be ejected.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Lock 0</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Unlock" />
+</related>
+</command-definition>
+
+<command-definition name="Mount"
+                    description="Prepares a CD-ROM for general use"
+                    >
+
+<syntax>
+ 
+<optional>
+<userreplace>disc_spec</userreplace>
+</optional>
+ 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="disc_spec">the name of the CD-ROM or number of the CD-ROM drive</parameter> 
+
+<use>
+<p>*Mount prepares a CD-ROM for general use by setting the current directory to its root directory, setting the library directory (if it is currently unset) to $.Library, and unsetting the User Root Directory (URD). If no disc spec is given, the default CD-ROM drive is used. The command is preserved for the sake of compatibility with earlier Acorn operating systems, and ideally you should not use it.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Mount :VIDEOCLIP2</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Dismount" />
+
+</related>
+</command-definition>
+<command-definition name="Play"
+                    description="Plays from the specified audio track to the end of the disc in a CD_ROM drive"
+                    >
+
+<syntax>
+ <userreplace>track</userreplace> 
+ <optional>
+  <userreplace>drive</userreplace>
+ </optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="track">track from which to start playing, in the range 0 - 99</parameter> 
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*Play plays from the specified audio track to the end of the disc in the given CD_ROM drive, or in the current drive if none is specified. No data is transferred to the computer; playback uses the drive's digital to analogue circuits and audio output - which is typically via a jack socket, phono sockets or other in-line adaptors.</p> <p>If the track number does not exist on the CD in the drive, you will get the error 'Number too small' or 'Number too big'. If you try to play a data track, you will get the error 'Cannot play that data'.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*Play 9 0</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="PlayMSF" />
+<reference type="command" name="Stop" />
+
+</related>
+</command-definition>
+<command-definition name="PlayList"
+                    description="Lists the tracks - whether audio or data - on the disc in a CD-ROM drive"
+                    >
+
+<syntax>
+ <optional>
+  <userreplace>drive</userreplace>
+ </optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*PlayList lists the tracks - whether audio or data - on the disc in the
+given CD-ROM drive, together with their start time and the total CD time. If
+no drive is specified, the current disc's tracks are listed.</p>
+
+<p>The start time is given as a 'Red Book address', in minutes, seconds, and
+frames (each of which is 1/75 of a second) from the start of the disc.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*PlayList 0</userinput>
+<systemoutput>Track number, contains, starts from MM:SS:FF<br />
+Track   01   is data    00:00:00<br />
+Track   02   is audio   23:24:65<br />
+Track   03   is audio   27:59:05<br />
+Total   03   track(s)   34:21:74
+</systemoutput></p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+<command-definition name="PlayMSF"
+                    description="Plays a piece of audio from the disc in a CD-ROM drive"
+                    >
+
+<syntax>
+ <userreplace>mins</userreplace>:<userreplace>secs</userreplace>:<userreplace>frames</userreplace>
+ <userreplace>mins</userreplace>:<userreplace>secs</userreplace>:<userreplace>frames</userreplace>
+ <optional><userreplace>drive</userreplace></optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="mins">number of minutes from the start of the disc at which to start/stop playing</parameter> 
+<parameter name="secs">number of seconds from the start of the disc at which to start/stop playing</parameter> 
+<parameter name="frames">number of frames from the start of the disc at which to start/stop playing</parameter> 
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*PlayMSF plays a piece of audio from the disc in the given CD-ROM drive,
+or in the current drive if none is specified. The start and stop times time
+are specified as a 'Red Book address', in minutes, seconds, and frames (each
+of which is 1/75 of a second) from the start of the disc. The start time is
+the first of the two parameters.</p>
+
+<p>Playing stops immediately a data track is encountered, so if the start
+time is in a data track this command will appear to do nothing. You will get
+an error if the start and/or end times lie outside the range of the CD.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*PlayMSF 02:05:38 23:59:74</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Play" />
+<reference type="command" name="Stop" />
+
+</related>
+</command-definition>
+<command-definition name="Stop"
+                    description="Stops playing the disc in a CD-ROM drive"
+                    >
+
+<syntax>
+ <optional>
+  <userreplace>drive</userreplace>
+ </optional>
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*Stop stops playing the disc in the given CD-ROM drive, or in the current
+drive if none is specified. If the drive is not currently playing, this
+command is ignored.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Stop 0</userinput></p>
+
+</example>
+
+<related>
+ <reference type="command" name="Play" />
+ <reference type="command" name="PlayMSF" />
+</related>
+</command-definition>
+<command-definition name="Supported"
+                    description="Lists the drive types recognised by CDFS"
+                    >
+
+<syntax>
+</syntax>
+
+<!-- parameters -->
+<!-- None --> 
+
+<use>
+<p>*Supported lists the drive types recognised by CDFS, and hence that are
+usable. The list only gives manufacturers' names, not model numbers.</p>
+<p>RISC OS 3.6 nominally supports the following drives:</p>
+
+<p>
+<value-table>
+<value number="ATAPI">Conformant drives</value>
+<value number="Chinon">CDS-431</value>
+<value number="Hitachi">CDR-3650/1650S and CDR-1750S</value>
+<value number="Philips">CM212 and CDD521</value>
+<value number="Sony">CDU-6111, CDU-6211, CDU-541 and CDU-561</value>
+<value number="Toshiba">XM-3301 and XM-3401</value>
+</value-table>
+</p>
+
+<p>However, since drives' firmware can change, you should not treat the
+above list as definitive. In particular, because the ATAPI standard is still
+in a state of flux, and not all drives conform to the standard anyway, you
+may find that not all so-called 'ATAPI' drives work with RISC OS 3.6.
+However, you may find some other drives made by the above manufacturers are
+sufficiently compatible to also work.</p>
+
+<p>This call may not be supported in the future, or the information returned
+may change in content and/or format. You should therefore not use this call
+in applications or scripts.</p>
+
+</use>
+
+<example>
+
+<p><userinput>*Supported</userinput>
+<systemoutput>SONY, LMS, TOSHIBA, HITACHI, CHINON</systemoutput>
+</p>
+<p>(LMS - Laser Magnetic Systems - is actually Philips)</p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+<command-definition name="Unlock"
+                    description="Re-enables the Eject button on a CD-ROM drive"
+                    >
+
+<syntax>
+ 
+<optional>
+<userreplace>drive</userreplace>
+</optional>
+ 
+
+</syntax>
+
+<!-- parameters -->
+<parameter name="drive">a valid CD-ROM drive number</parameter> 
+
+<use>
+<p>*Unlock re-enables the Eject button on the given CD-ROM drive, reversing
+the effect of any earlier *Lock command. If no drive is specified, the
+current drive is unlocked.</p> 
+
+</use>
+
+<example>
+
+<p><userinput>*Unlock 0</userinput></p>
+
+</example>
+
+<related>
+<reference type="command" name="Eject" />
+<reference type="command" name="Lock" />
+
+</related>
+</command-definition>
+<command-definition name="WhichDisc"
+                    description="Displays the unique ID number for the disc in the current CD-ROM drive"
+                    >
+
+<syntax>
+</syntax>
+
+<!-- parameters -->
+<!-- None --> 
+
+<use>
+<p>*WhichDisc displays the unique ID number for the disc in the current
+CD-ROM drive. The number is calculated from the information in the disc's
+TOC (as defined in the <strong>Red Book</strong>), therefore it is unlikely
+that two discs will have the same value.</p> 
+
+</use>
+
+<example>
+
+<p>
+<userinput>*WhichDisc</userinput>
+<systemoutput>322279</systemoutput></p>
+
+</example>
+
+<related>
+<!-- None --> 
+
+</related>
+</command-definition>
+</section>
+</chapter>
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="RISCOS Ltd" address="developer@riscos.com" />
+ </maintainer>
+ <disclaimer>
+  <import document="http://www.riscos.com/prm/prm-disclaimer.xml" path="root/*" />
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="ROL" title="Initial version" />
+ </history>
+</meta>
+</riscos-prm>
