@@ -29,7 +29,13 @@ docs-riscos:
   <<: *common
   stage: docs
   script:
-    - ci/build.sh install --upload
+    - ci/build.sh install
+
+docs-posix:
+  <<: *common
+  stage: docs
+  script:
+    - PRINCEXML_I_HAVE_A_LICENSE=1 ./build.sh
 
 
 #### Stages to execute ####

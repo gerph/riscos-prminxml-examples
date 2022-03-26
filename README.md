@@ -6,8 +6,25 @@ converts the content to HTML files which can be read more easily.
 
 The Releases on GitHub include the generated documentation.
 
-## Building the examples
+## Building the examples with the tool
 
-The PRM-in-XML tool is required to process these files. To build them, use a command like:
+To directly generate the documentation, the PRM-in-XML tool is required to process these files.
+To build them, use a command like:
 
     riscos-prminxml prminxml/amplayer.xml
+
+## Building the examples with docker
+
+Building the documentation can be performed on most modern POSIX systems with Docker.
+
+With Docker:
+
+    docker run -it --rm -v$PWD:/work -w /work ubuntu:18.04 ./build.sh
+
+This will install all the necessary components and perform the build.
+The build will produce results in the `output` directory, as HTML.
+
+For PDF use, you should follow the [PrinceXML licensing](https://www.princexml.com/purchase/license_faq/) terms. For most use, you should be able to use the non-commercial license.
+This can be indicated by setting the environment variable `PRINCEXML_I_HAVE_A_LICENSE`, thus:
+
+    docker run -it --rm -v$PWD:/work -e PRINCEXML_I_HAVE_A_LICENSE=1 -w /work ubuntu:18.04 ./build.sh
