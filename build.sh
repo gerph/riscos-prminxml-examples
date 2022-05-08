@@ -31,7 +31,7 @@ set -o pipefail
 
 PRINCE_VERSION=14.2
 #PRMINXML_VERSION=1.02.65
-PRMINXML_VERSION=1.03.65.html5-css.105
+PRMINXML_VERSION=1.03.65.html5-css.176
 SYSTEM="$(uname -s)"
 
 # Whether to use local or released version ('true' or 'false')

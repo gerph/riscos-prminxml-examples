@@ -3,7 +3,7 @@
 
 INSTDIR ?= artifacts/docs
 
-PRM_VARIANT = prm body-fraunces heading-raleway webfont-fraunces webfont-raleway large-bullets
+PRM_VARIANT = prm body-fraunces heading-raleway webfont-fraunces webfont-raleway large-bullets no-edge-index
 
 # The examples are those files that have been made public - the original Release10
 # included the documents, and gave permission for their reproduction so these are
@@ -36,13 +36,21 @@ all: ${DOCDEST_POSIX}
 htmldir:
 	mkdir -p ${INSTDIR}/html
 pdfdir:
+ifeq (${PRINCEXML_I_HAVE_A_LICENSE},1)
 	mkdir -p ${INSTDIR}/pdf
+else
+	echo Nothing to do without a PrinceXML license.
+endif
 
 ${INSTDIR}/html/%.html: prminxml/%.xml | htmldir
 	riscos-prminxml -f html5 --param css-variant='${PRM_VARIANT}' -o $@ $?
 
 ${INSTDIR}/pdf/%.pdf: ${INSTDIR}/html/%.html | pdfdir
+ifeq (${PRINCEXML_I_HAVE_A_LICENSE},1)
 	prince --verbose -o $@ $?
+else
+	@echo NOTE: Not licensed for PrinceXML, so not building the PDF of $?.
+endif
 
 
 #---------------------------------------------------------------------------
