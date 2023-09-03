@@ -61,7 +61,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: ./artifacts/docs/html
+          path: ./artifacts/docs
 
   # The release only triggers when the thing that was pushed was a tag starting with 'v'
   release:
@@ -106,6 +106,7 @@ jobs:
           asset_path: PRMinXML-Examples.zip
           asset_name: PRMinXML-Examples-${{ steps.get_version.outputs.VERSION }}.zip
           asset_content_type: application/zip
+
   publish:
     environment:
       name: github-pages

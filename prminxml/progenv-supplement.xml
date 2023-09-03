@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
+                            "http://gerph.org/dtd/102/prm.dtd">
+
+<riscos-prm>
+<chapter title="Program Environment (supplement for Pyromaniac)">
+<section title="Introduction and Overview">
+
+<p>
+    This chapter documents the changes to the program environment for Pyromaniac.
+</p>
+
+
+</section>
+
+
+<section title="Technical details">
+<p>
+    Largely, the program environment in Pyromaniac is as documented within the Program Environment Chapter.
+    However, certain interfaces are slightly different to make extensions to the system simpler.
+</p>
+
+<subsection title="Handler 13: Exception register area">
+    <p>
+        On 26bit systems, the exception register area is 16 words (64 bytes) long. This area stores the
+        registers at the time of an exception (Prefetch abort, data abort, or address exception).
+    </p>
+    <p>
+        On 32bit systems, the exception register area is 17 words (68 bytes) long. This is the same
+        layout as the 26bit system, but with the value of the CSPR in the final word.
+    </p>
+</subsection>
+
+<subsection title="Handler 32: Branch through 0 handler">
+    <p>
+        Under RISC OS Classic, the handling of a branch through 0 (calling address 0) was performed within
+        the Kernel as an implicit part of abort handling. For RISC OS Select 3, the handling of branch
+        through zero moved to the undefined instruction handler. In either case, the only action possible
+        was for an error to be raised.
+    </p>
+    <p>
+        Under RISC OS Pyromaniac, the Branch through 0 handler is called when code is executed at address 0.
+        This handler stores registers in the abort area, just as the abort handler would. The default
+        action for this handler is to raise the 'Branch through 0' error.
+    </p>
+</subsection>
+
+
+<subsection title="Handler 33: Command line area">
+    <p>
+        Under RISC OS Classic, the command line buffers were fixed in memory.
+        When an <reference type="swi" name="OS_WriteEnv" href="?"/> is issued the command line supplied is
+        copied into the Kernel command line buffer. The length of this buffer was extended in RISC OS 4,
+        but there was no defined mechanism to read the length of the buffer used by the system.
+    </p>
+    <p>
+        The buffer length in RISC OS 4 and later is 1024 bytes. Prior to RISC OS 4, the length was 256 bytes.
+    </p>
+    <p>
+        Under RISC OS Pyromaniac, the area that the Kernel will use to store the command line is a part
+        of the program environment, and the size of the buffer is able to be read or changed. The handler
+        buffer, supplied in R3, reports the command line buffer location. The size of the buffer is reported
+        in R2.
+    </p>
+    <p>
+        The default buffer length under RISC OS Pyromaniac is 1024 bytes but is configurable through the
+        system configuration.
+    </p>
+</subsection>
+</section>
+
+
+<section title="SWI calls">
+
+<swi-definition name="OS_ChangeEnvironment"
+                number="40"
+                reason="32"
+                reasonname="BranchThrough0Handler"
+                description="Install or read the Branch through 0 handler"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">32 (reason code)</register-use>
+ <register-use number="1">Pointer to new branch through 0 handler, or 0 to read the current handler</register-use>
+ <register-use number="2">Ignored</register-use>
+ <register-use number="3">Ignored</register-use>
+</entry>
+
+<exit>
+    <register-use number="0" state="preserved"/>
+    <register-use number="1" state="preserved"/>
+    <register-use number="2">Previous command line buffer length</register-use>
+    <register-use number="3">Previous command line buffer address</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to read or update the address of the handler used when a call is made to address 0.</p>
+<p>The handler will be entered in SVC mode. The registers will be preserved from the time of call. This means that the banked SVC registers will be in the state they were when the call was made, even when called in USR mode. The registers and CPSR at the time of the call will be stored in the Exception registers area.</p>
+</use>
+
+<related>
+</related>
+</swi-definition>
+
+
+<swi-definition name="OS_ChangeEnvironment"
+                number="40"
+                reason="33"
+                reasonname="CommandLineArea"
+                description="Set or read the area used for the command line"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">33 (reason code)</register-use>
+ <register-use number="1">Ignored</register-use>
+ <register-use number="2">Size of the command line buffer, or 0 to read the current command line size</register-use>
+ <register-use number="3">Pointer to the command line buffer, or 0 to read the current command line buffer</register-use>
+</entry>
+
+<exit>
+    <register-use number="0" state="preserved"/>
+    <register-use number="1" state="preserved"/>
+    <register-use number="2">Previous command line buffer length</register-use>
+    <register-use number="3">Previous command line buffer address</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to read or update the address and size of the area of memory used to store the command line buffer.</p>
+</use>
+
+<related>
+</related>
+</swi-definition>
+</section>
+
+</chapter>
+
+
+<!-- MetaData -->
+<meta>
+ <maintainer>
+  <email name="Gerph" address="gerph@gerph.org" />
+ </maintainer>
+ <disclaimer>
+    <p>
+        &copy; Gerph, 2020.
+    </p>
+ </disclaimer>
+
+ <history>
+  <revision number="1" author="Gerph" date="11 Nov 2020" title="Initial version">
+    <change>Created</change>
+  </revision>
+ </history>
+
+</meta>
+</riscos-prm>

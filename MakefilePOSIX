@@ -17,21 +17,28 @@ DOCSRC     = prminxml.amplayer/xml \
              prminxml.colourswatch/xml \
              prminxml.colourtrans/xml \
              prminxml.dragasprite/xml \
-             prminxml.fontmap/xml \
              prminxml.finger/xml \
+             prminxml.fontmap/xml \
              prminxml.freeway/xml \
              prminxml.host/xml \
              prminxml.hourglass/xml \
+             prminxml.optionswindow/xml \
+             prminxml.progenv-supplement/xml \
              prminxml.ramfs/xml \
              prminxml.squash/xml \
              prminxml.ssb/xml \
              prminxml.taskmanager/xml \
              prminxml.zlib/xml \
 
-DOCDEST_POSIX = $(patsubst prminxml.%/xml,${INSTDIR}/html/%.html,${DOCSRC}) \
-				$(patsubst prminxml.%/xml,${INSTDIR}/pdf/%.pdf,${DOCSRC})
+DOCSRC_PNG = $(wildcard prminxml/*.png)
 
-all: ${DOCDEST_POSIX}
+DOCDEST_HTML = $(patsubst prminxml.%/xml,${INSTDIR}/html/%.html,${DOCSRC})
+DOCDEST_PDF  = $(patsubst prminxml.%/xml,${INSTDIR}/pdf/%.pdf,${DOCSRC})
+DOCDEST_PNG  = $(patsubst prminxml/%,${INSTDIR}/html/%,${DOCSRC_PNG})
+DOCDEST_POSIX = ${DOCDEST_HTML} ${DOCDEST_PDF} ${DOCDEST_PNG}
+
+all: ${DOCDEST_POSIX} ${INSTDIR}/index.html
+index: ${INSTDIR}/index.html
 
 htmldir:
 	mkdir -p ${INSTDIR}/html
@@ -42,8 +49,14 @@ else
 	@echo Nothing to do without a PrinceXML license.
 endif
 
+${INSTDIR}/html/%.png: prminxml/%.png | htmldir
+	cp $? $@
+
 ${INSTDIR}/html/%.html: prminxml/%.xml | htmldir
-	riscos-prminxml -f html5 --param css-variant='${PRM_VARIANT}' -o $@ $?
+	riscos-prminxml -f html5+xml --param css-variant='${PRM_VARIANT}' -o $@ $?
+
+${INSTDIR}/index.html: index-generator.pl index-head.html index-tail.html ${DOCDEST_POSIX} htmldir
+	./index-generator.pl $@ ${DOCDEST_HTML}
 
 ${INSTDIR}/pdf/%.pdf: ${INSTDIR}/html/%.html | pdfdir
 ifeq (${PRINCEXML_I_HAVE_A_LICENSE},1)
