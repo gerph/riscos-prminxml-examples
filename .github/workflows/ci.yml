@@ -36,7 +36,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -53,7 +53,7 @@ jobs:
           # use the non-commercial license.
           sudo env PRINCEXML_I_HAVE_A_LICENSE=1 ./build.sh
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: PRMinXML-Examples
           path: artifacts/docs
@@ -70,42 +70,28 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download built documentation
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
-          name: PRMinXML-Examples
+          name: PRMinXML-Staging
+          path: PRMinXML-Staging
 
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
       - name: Build the zip archive from the documentation
         run: |
           cd PRMinXML-Examples
-          zip -9r ../PRMinXML-Examples.zip *
+          zip -9r ../PRMinXML-Examples-${{ steps.get_version.outputs.VERSION }}.zip *
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.event.release.tag_name }}
-          draft: true
           prerelease: false
-
-      - name: Upload full archive Assets
-        id: upload-asset-full
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`.
-          # See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PRMinXML-Examples.zip
-          asset_name: PRMinXML-Examples-${{ steps.get_version.outputs.VERSION }}.zip
-          asset_content_type: application/zip
+          draft: true
+          artifacts: "PRMinXML-Examples-${{ steps.get_version.outputs.VERSION }}.zip"
+          artifactContentType: application/zip
 
   publish:
     environment:
