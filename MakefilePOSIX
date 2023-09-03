@@ -39,7 +39,7 @@ pdfdir:
 ifeq (${PRINCEXML_I_HAVE_A_LICENSE},1)
 	mkdir -p ${INSTDIR}/pdf
 else
-	echo Nothing to do without a PrinceXML license.
+	@echo Nothing to do without a PrinceXML license.
 endif
 
 ${INSTDIR}/html/%.html: prminxml/%.xml | htmldir
@@ -51,7 +51,3 @@ ifeq (${PRINCEXML_I_HAVE_A_LICENSE},1)
 else
 	@echo NOTE: Not licensed for PrinceXML, so not building the PDF of $?.
 endif
-
-
-#---------------------------------------------------------------------------
-# Dynamic dependencies:
