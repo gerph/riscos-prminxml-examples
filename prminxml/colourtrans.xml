@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
-                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.03//EN"
+                            "http://gerph.org/dtd/103/prm.dtd">
 
 <riscos-prm>
 
 <!-- Document declares itself as RISC OS PRMs: Volume 3: Chapter 60: ColourTrans -->
-<!-- NOTE: Many of the links in this document are screwed -->
+<!-- NOTE: Many of the links in this document are broken -->
 
 <chapter title="ColourTrans">
 
@@ -295,11 +295,14 @@ Given palette entry, mode and palette pointer, return furthest colour number</p>
 <p>These calls use a simple algorithm to find the colour in the palette that
 most closely matches the high resolution colour specified in the palette
 entry. It calculates the distance between the colours, which is a weighted
-least squares function. If the desired colour is (R<i>d</i>, B<i>d</i>,
-G<i>d</i>) and a trial colour is (R<i>t</i>, B<i>t</i>, G<i>t</i>),
+least squares function. If the desired colour is (R<userinput>d</userinput>,
+B<userinput>d</userinput>, G<userinput>d</userinput>) and a trial colour is
+(R<userinput>t</userinput>, B<userinput>t</userinput>, G<userinput>t</userinput>),
 then:</p>
 
-<p>distance = redweight &times; (R<sub>t</sub>-R<sub>d</sub>)<sup>2</sup> + greenweight &times; (G<sub>t</sub>-G<sub>d</sub>)<sup>2</sup> + blueweight &times; (B<sub>t</sub>-B<sub>d</sub>)<sup>2</sup></p>
+<p>distance = redweight &times; (R<sub>t</sub>-R<sub>d</sub>)<sup>2</sup> +
+greenweight &times; (G<sub>t</sub>-G<sub>d</sub>)<sup>2</sup> + blueweight
+&times; (B<sub>t</sub>-B<sub>d</sub>)<sup>2</sup></p>
 
 <p>where redweight = 2, greenweight = 4 and blueweight = 1. These weights
 are set for the most visually effective solution to this problem. (In RISC
@@ -384,16 +387,17 @@ components are presumed to be zero.</p>
 
 <p>
 <value-table head-number="Word" head-value="Meaning">
-<value number="0">Number of pairs of component 1 (<i>n1</i>)</value>
-<value number="1">Number of pairs of component 2 (<i>n2</i>)</value>
-<value number="2">Number of pairs of component 3 (<i>n3</i>)</value>
-<value number="3"><i>n1</i> words giving pairs for component 1</value>
-<value number="3 + n1"><i>n2</i> words giving pairs for component 2</value>
-<value number="3 + n1 + n2"><i>n3</i> words giving pairs for component 3</value>
+<value number="0">Number of pairs of component 1 (<userinput>n1</userinput>)</value>
+<value number="1">Number of pairs of component 2 (<userinput>n2</userinput>)</value>
+<value number="2">Number of pairs of component 3 (<userinput>n3</userinput>)</value>
+<value number="3"><userinput>n1</userinput> words giving pairs for component 1</value>
+<value number="3 + n1"><userinput>n2</userinput> words giving pairs for component 2</value>
+<value number="3 + n1 + n2"><userinput>n3</userinput> words giving pairs for component 3</value>
 </value-table>
 </p>
 
-<p>The length of the table is therefore 3 + <i>n1</i> + <i>n2</i> + <i>n3</i> words.</p>
+<p>The length of the table is therefore 3 + <userinput>n1</userinput> +
+<userinput>n2</userinput> + <userinput>n3</userinput> words.</p>
 
 <p>Within each of the three sets of mappings, the words must be sorted in ascending order of device component. To fill the device colour space, there must be entries for device components of 0 and 255, so there must be at least two pairs for each component.</p>
 
@@ -441,23 +445,23 @@ standard colour.</p>
                     >
 <entry>
 
-<register-use number="1">&hex;5B (reason code) 
+<register-use number="1">&hex;5B (reason code)
 
 </register-use>
 </entry>
 
 <exit>
-<register-use number="1">Must be preserved. This service call should not be claimed</register-use> 
+<register-use number="1">Must be preserved. This service call should not be claimed</register-use>
 <register-use number="All" state="preserved" />
 
 </exit>
 
 <use>
 <p>This service is issued by the ColourTrans module when the
-ColourTrans_SetCalibration SWI has been issued. </p> 
+ColourTrans_SetCalibration SWI has been issued. </p>
 
 <p>It is noticed by the Palette utility in the desktop, which broadcasts a
-Message_PaletteChange.</p> 
+Message_PaletteChange.</p>
 
 <p>This service call is not used by RISC OS 2.</p> 
 
@@ -481,7 +485,7 @@ Message_PaletteChange.</p>
 
 <use>
 <p>This service is broadcast whenever the cache is flushed within
-ColourTrans. You should never claim it.</p> 
+ColourTrans. You should never claim it.</p>
 
 <p>This service call is not used by RISC OS 2.</p> 
 
@@ -575,7 +579,7 @@ sprite area control block.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_GenerateTable" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -673,7 +677,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_ReturnColourNumber" />
 <reference type="swi" name="ColourTrans_ReturnGCOLForMode" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOL" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -692,7 +696,7 @@ versions.</p>
 
 <register-use number="0">palette entry</register-use>
 <register-use number="3">flags</register-use>
-<register-use number="4">GCOL action 
+<register-use number="4">GCOL action
 
 </register-use>
 </entry>
@@ -707,7 +711,7 @@ versions.</p>
 </exit>
 
 <use>
-<p>This call, given a palette entry, works out the closest GCOL in the current mode and palette, and sets it. </p> 
+<p>This call, given a palette entry, works out the closest GCOL in the current mode and palette, and sets it. </p>
 
 <p>
 <bitfield-table>
@@ -734,7 +738,7 @@ versions.</p>
 <related>
 <reference type="swi" name="ColourTrans_ReturnGCOL" />
 <reference type="swi" name="ColourTrans_SetOppGCOL" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -769,7 +773,7 @@ OS 2, but are calibrated in later versions.</p>
 <reference type="swi" name="ColourTrans_ReturnGCOL" />
 <reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -786,7 +790,7 @@ OS 2, but are calibrated in later versions.</p>
 <register-use number="0">palette entry</register-use>
 <register-use number="1">destination mode, or -1 for current mode
 </register-use>
-<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode 
+<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode
 </register-use>
 </entry>
 
@@ -808,7 +812,7 @@ OS 2, but are calibrated in later versions.</p>
 <reference type="swi" name="ColourTrans_SetGCOL" />
 <reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -827,7 +831,7 @@ OS 2, but are calibrated in later versions.</p>
 <register-use number="1">destination mode, or -1 for current mode
 </register-use>
 <register-use number="2">palette pointer, or -1 for current palette, or 0
-for default for the mode 
+for default for the mode
 </register-use>
 </entry>
 
@@ -851,7 +855,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_ReturnColourNumber" />
 <reference type="swi" name="ColourTrans_ReturnGCOLForMode" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -892,7 +896,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_SetOppGCOL" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -938,7 +942,7 @@ versions.</p>
 <related>
 <reference type="swi" name="ColourTrans_SetGCOL" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOL" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -974,7 +978,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_ReturnColourNumber" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOL" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -992,7 +996,7 @@ versions.</p>
 <register-use number="0">palette entry</register-use>
 <register-use number="1">destination mode or -1 for current mode
 </register-use>
-<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode 
+<register-use number="2">palette pointer, or -1 for current palette, or 0 for default for the mode
 </register-use>
 </entry>
 
@@ -1017,7 +1021,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_ReturnOppGCOL" />
 <reference type="swi" name="ColourTrans_SetOppGCOL" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1059,7 +1063,7 @@ versions.</p>
 <reference type="swi" name="ColourTrans_ReturnColourNumberForMode" />
 <reference type="swi" name="ColourTrans_ReturnOppColourNumber" />
 <reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1092,7 +1096,7 @@ meaningless for any others.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ColourNumberToGCOL" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1107,14 +1111,14 @@ meaningless for any others.</p>
 
 <entry>
 
-<register-use number="0">colour number 
+<register-use number="0">colour number
 
 </register-use>
 </entry>
 
 <exit>
 
-<register-use number="0">GCOL 
+<register-use number="0">GCOL
 
 </register-use>
 </exit>
@@ -1128,7 +1132,7 @@ meaningless for any others.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_GCOLToColourNumber" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1152,7 +1156,7 @@ meaningless for any others.</p>
 <register-use number="2">foreground palette entry
 
 </register-use>
-<register-use number="3">maximum foreground colour offset (0 - 14) 
+<register-use number="3">maximum foreground colour offset (0 - 14)
 
 </register-use>
 </entry>
@@ -1163,7 +1167,7 @@ meaningless for any others.</p>
 <register-use number="1">background logical colour (preserved if in 256 colour mode)
 </register-use>
 <register-use number="2">foreground logical colour</register-use>
-<register-use number="3">maximum sensible colour offset (up to R3 on entry) 
+<register-use number="3">maximum sensible colour offset (up to R3 on entry)
 </register-use>
 </exit>
 
@@ -1204,7 +1208,7 @@ call.</p>
 <related>
 <reference type="swi" name="ColourTrans_SetFontColours" />
 <reference type="swi" name="Font_SetFontColours" href="fontmanager" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1223,7 +1227,7 @@ call.</p>
 </register-use>
 <register-use number="1">background palette entry</register-use>
 <register-use number="2">foreground palette entry</register-use>
-<register-use number="3">maximum foreground colour offset (0 - 14) 
+<register-use number="3">maximum foreground colour offset (0 - 14)
 </register-use>
 </entry>
 
@@ -1251,7 +1255,7 @@ versions.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ReturnFontColours" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1286,7 +1290,7 @@ automatically do this for you.</p>
 </use>
 
 <related>
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1324,7 +1328,7 @@ pairs do not cover the full range &hex;00 to &hex;FF.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ReadCalibration" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1339,7 +1343,7 @@ pairs do not cover the full range &hex;00 to &hex;FF.</p>
 
 <entry>
 
-<register-use number="0">0 to read required size of table, or pointer to buffer 
+<register-use number="0">0 to read required size of table, or pointer to buffer
 </register-use>
 </entry>
 
@@ -1361,7 +1365,7 @@ the table.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_SetCalibration" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1379,13 +1383,13 @@ the table.</p>
 <register-use number="1">24-bit device colour (&hex;BBGGRR00 for the screen)
 
 </register-use>
-<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use 
+<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use
 </register-use>
 </entry>
 
 <exit>
 
-<register-use number="2">24-bit standard colour (&hex;BBGGRR00) 
+<register-use number="2">24-bit standard colour (&hex;BBGGRR00)
 </register-use>
 </exit>
 
@@ -1398,7 +1402,7 @@ the table.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertDevicePalette" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1418,12 +1422,12 @@ the table.</p>
 </register-use>
 <register-use number="2">pointer to table to store standard colours
 </register-use>
-<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use 
+<register-use number="3">0 to use the current screen calibration, or pointer to calibration table to use
 </register-use>
 </entry>
 
 <exit>
-<register-use number="0-3" state="preserved" /> 
+<register-use number="0-3" state="preserved" />
 </exit>
 
 <use>
@@ -1440,7 +1444,7 @@ drivers.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertDeviceColour" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1483,7 +1487,7 @@ ColourTrans_ConvertRGBToCMYK.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertCIEToRGB" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1526,7 +1530,7 @@ ColourTrans_ConvertCMYKToRGB.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertRGBToCIE" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1541,7 +1545,7 @@ ColourTrans_ConvertCMYKToRGB.</p>
 <entry>
 
 <register-use number="0">flags</register-use>
-<register-use number="1">file handle of file to save calibration to 
+<register-use number="1">file handle of file to save calibration to
 </register-use>
 </entry>
 
@@ -1562,7 +1566,7 @@ be saved even if it is the default calibration.</p>
 </use>
 
 <related>
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 </related>
 </swi-definition>
 <swi-definition name="ColourTrans_ConvertRGBToHSV"
@@ -1605,7 +1609,7 @@ and may have fractional elements.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertHSVToRGB" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1650,7 +1654,7 @@ reason we recommend that when using this call 0 &lt; hue &le; 360.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertRGBToHSV" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1694,7 +1698,7 @@ values.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertCMYKToRGB" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1737,7 +1741,7 @@ values.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ConvertRGBToCMYK" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1754,13 +1758,14 @@ values.</p>
 
 <register-use number="0">source mode, or -1 for current mode, or (if &ge; 256) pointer to sprite area
 </register-use>
-<register-use number="1">source palette pointer, or -1 for current palette, or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0 (as specified by bit 0 of R4)
+<register-use number="1">source palette pointer, or -1 for current palette,
+or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0
+(as specified by bit 0 of R4)</register-use>
 
-</register-use>
-<register-use number="2">pointer to buffer, or 0 to return required size in R3
+<register-use number="2">pointer to buffer, or 0 to return required size in R3</register-use>
 
-</register-use>
 <register-use number="3">size of buffer (if R2 &ne; 0)</register-use>
+
 <register-use number="4">flags (used if R0 &ge; 256):
  <bitfield-table>
   <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
@@ -1793,7 +1798,7 @@ VIDC).</p>
 
 <related>
 <reference type="swi" name="ColourTrans_WritePalette" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 <reference type="vector" name="PaletteV" href="?" />
 
 </related>
@@ -1812,13 +1817,13 @@ VIDC).</p>
 <register-use number="0">-1 to write current mode's palette, or pointer to sprite area
 
 </register-use>
-<register-use number="1">-1 to write current palette, else ignored (if R0 = -1); or (if R0 &ge; 0) pointer to sprite name/sprite in area pointed to by R0 (as specified by R4)
+<register-use number="1">-1 to write current palette, else ignored (if R0 =
+-1); or (if R0 &ge; 0) pointer to sprite name/sprite in area pointed to by
+R0 (as specified by R4)</register-use>
 
-</register-use>
 <register-use number="2">pointer to palette to write<br />
-R3 reserved (must be zero)
+R3 reserved (must be zero)</register-use>
 
-</register-use>
 <register-use number="4">flags (used if R0 &ge; 0):<br />
  <bitfield-table>
   <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
@@ -1845,7 +1850,7 @@ the original palette. Otherwise the full 256 colours are written.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ReadPalette" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 <reference type="vector" name="PaletteV" href="?" />
 
 </related>
@@ -1873,7 +1878,7 @@ the original palette. Otherwise the full 256 colours are written.</p>
 </entry>
 
 <exit>
-<register-use number="All" state="preserved" /> 
+<register-use number="All" state="preserved" />
 </exit>
 
 <use>
@@ -1890,7 +1895,7 @@ rather than the graphics colours.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_ReturnGCOL" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1930,8 +1935,8 @@ to support desktop saving of the loadings.</p>
 </use>
 
 <related>
-<!-- None --> 
-<reference type="vector" name="ColourV" href="?" />
+<!-- None -->
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -1975,7 +1980,7 @@ for the current mode.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_SetOppTextColour" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -2019,7 +2024,7 @@ for the current mode.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_SetTextColour" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
@@ -2034,20 +2039,22 @@ for the current mode.</p>
 
 <entry>
 
-<register-use number="0">source mode, or -1 for current mode, or (if = 256) pointer to sprite, or (if &gt; 256) pointer to sprite area<!-- errata --> 
+<register-use number="0">source mode, or -1 for current mode, or (if = 256)
+pointer to sprite, or (if &gt; 256) pointer to sprite area<!-- errata -->
 </register-use>
+
 <register-use number="1">source palette pointer, or -1 for current palette,
 or (if R0 &ge; 256) pointer to sprite name/sprite in area pointed to by R0
-(as specified by bit 0 of R5)
-</register-use>
-<register-use number="2">destination mode, or -1 for current mode
-</register-use>
+(as specified by bit 0 of R5)</register-use>
+
+<register-use number="2">destination mode, or -1 for current mode</register-use>
+
 <register-use number="3">destination palette pointer, or -1 for current
-palette, or 0 for default for the mode
-</register-use>
+palette, or 0 for default for the mode</register-use>
+
 <register-use number="4">pointer to buffer, or 0 to return required size of
-buffer
-</register-use>
+buffer</register-use>
+
 <register-use number="5">flags:<br />
 <bitfield-table>
  <bit number="0">R1 = pointer to sprite; else R1 = pointer to sprite name</bit>
@@ -2063,12 +2070,13 @@ buffer
  <bit number="other" state="reserved" />
 </bitfield-table>
 </register-use>
+
 <register-use number="6">pointer to workspace for transfer function (if bit
-2 of R5 is set)
-</register-use>
+2 of R5 is set)</register-use>
+
 <register-use number="7">pointer to transfer function (if bit 2 of R5 is
-set)
-</register-use>
+set)</register-use>
+
 </entry>
 
 <exit>
@@ -2089,11 +2097,88 @@ R5 always contains a valid flags word.</p>
 
 <related>
 <reference type="swi" name="ColourTrans_SelectTable" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </swi-definition>
 </section>
+
+<section title="Vectors">
+<vector-definition name="ColourV"
+                   number="22"
+                   description="Used to indirect all SWI calls made to the ColourTrans module"
+                   irqs="undefined"
+                   fiqs="enabled"
+                   processor-mode="SVC"
+                   re-entrant="yes"
+                   >
+<entry>
+ <register-use number="0-7">depends on SWI issued</register-use>
+ <register-use number="8">index of SWI within the ColourTrans module SWI
+                          chunk</register-use>
+
+</entry>
+
+<exit>
+ <register-use number="0-7">depends on SWI issued</register-use>
+</exit>
+
+<use>
+<p>This vector is used to indirect all SWI calls made to the ColourTrans
+module. The default action is to call the routine in the ColourTrans module
+that decodes and executes SWIs.</p>
+
+<p>The index held in R8 is decoded as follows:</p>
+
+<p>
+<value-table>
+ <value number="0"><reference type="swi" name="ColourTrans_SelectTable" /></value>
+ <value number="1"><reference type="swi" name="ColourTrans_SelectGCOLTable" /></value>
+ <value number="2"><reference type="swi" name="ColourTrans_ReturnGCOL" /></value>
+ <value number="3"><reference type="swi" name="ColourTrans_SetGCOL" /></value>
+ <value number="4"><reference type="swi" name="ColourTrans_ReturnColourNumber" /></value>
+ <value number="5"><reference type="swi" name="ColourTrans_ReturnGCOLForMode" /></value>
+ <value number="6"><reference type="swi" name="ColourTrans_ReturnColourNumberForMode" /></value>
+ <value number="7"><reference type="swi" name="ColourTrans_ReturnOppGCOL" /></value>
+ <value number="8"><reference type="swi" name="ColourTrans_SetOppGCOL" /></value>
+ <value number="9"><reference type="swi" name="ColourTrans_ReturnOppColourNumber" /></value>
+ <value number="10"><reference type="swi" name="ColourTrans_ReturnOppGCOLForMode" /></value>
+ <value number="11"><reference type="swi" name="ColourTrans_ReturnOppColourNumberForMode" /></value>
+ <value number="12"><reference type="swi" name="ColourTrans_GCOLToColourNumber" /></value>
+ <value number="13"><reference type="swi" name="ColourTrans_ColourNumberToGCOL" /></value>
+ <value number="14"><reference type="swi" name="ColourTrans_ReturnFontColours" /></value>
+ <value number="15"><reference type="swi" name="ColourTrans_SetFontColours" /></value>
+ <value number="16"><reference type="swi" name="ColourTrans_InvalidateCache" /></value>
+ <value number="17"><reference type="swi" name="ColourTrans_SetCalibration" /></value>
+ <value number="18"><reference type="swi" name="ColourTrans_ReadCalibration" /></value>
+ <value number="19"><reference type="swi" name="ColourTrans_ConvertDeviceColour" /></value>
+ <value number="20"><reference type="swi" name="ColourTrans_ConvertDevicePalette" /></value>
+ <value number="21"><reference type="swi" name="ColourTrans_ConvertRGBToCIE" /></value>
+ <value number="22"><reference type="swi" name="ColourTrans_ConvertCIEToRGB" /></value>
+ <value number="23"><reference type="swi" name="ColourTrans_WriteCalibrationToFile" /></value>
+ <value number="24"><reference type="swi" name="ColourTrans_ConvertRGBToHSV" /></value>
+ <value number="25"><reference type="swi" name="ColourTrans_ConvertHSVToRGB" /></value>
+ <value number="26"><reference type="swi" name="ColourTrans_ConvertRGBToCMYK" /></value>
+ <value number="27"><reference type="swi" name="ColourTrans_ConvertCMYKToRGB" /></value>
+ <value number="28"><reference type="swi" name="ColourTrans_ReadPalette" /></value>
+ <value number="29"><reference type="swi" name="ColourTrans_WritePalette" /></value>
+ <value number="30"><reference type="swi" name="ColourTrans_SetColour" /></value>
+ <value number="31"><reference type="swi" name="ColourTrans_MiscOp" /></value>
+ <value number="32"><reference type="swi" name="ColourTrans_WriteLoadingsToFile" /></value>
+ <value number="33"><reference type="swi" name="ColourTrans_SetTextColour" /></value>
+ <value number="34"><reference type="swi" name="ColourTrans_SetOppTextColour" /></value>
+ <value number="35"><reference type="swi" name="ColourTrans_GenerateTable" /></value>
+</value-table>
+</p>
+</use>
+
+<related>
+</related>
+
+</vector-definition>
+</section>
+
+
 <section title="* Commands">
 
 <command-definition name="ColourTransLoadings"
@@ -2103,7 +2188,7 @@ R5 always contains a valid flags word.</p>
 <syntax>
  <userreplace>redweight</userreplace>
  <userreplace>greenweight</userreplace>
- <userreplace>blueweight</userreplace> 
+ <userreplace>blueweight</userreplace>
 </syntax>
 
 <!-- parameters -->
@@ -2111,10 +2196,12 @@ R5 always contains a valid flags word.</p>
 <parameter name="redweight">red weighting used when trying to match colours</parameter>
 
 <parameter name="greenweight">green weighting used when trying to match colours</parameter>
-<parameter name="blueweight">blue weighting used when trying to match colours</parameter> 
+<parameter name="blueweight">blue weighting used when trying to match colours</parameter>
 
 <use>
-<p>*ColourTransLoadings sets the red, green and blue weightings used when trying to match colours (as described in <reference type="subsection" name="Finding a colour" />).</p>
+<p>*ColourTransLoadings sets the red, green and blue weightings used when
+trying to match colours (as described in <reference type="subsection"
+name="Finding a colour" />).</p>
 
 <p>The main purpose of this command is to enable the Task Manager to save
 the calibration when a desktop save is done. You should not use it
@@ -2130,9 +2217,9 @@ yourself.</p>
 </example>
 
 <related>
-<!-- None --> 
+<!-- None -->
 <reference type="swi" name="ColourTrans_WriteLoadingsToFile" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </command-definition>
@@ -2145,16 +2232,16 @@ yourself.</p>
  <userreplace>RRGGBBDD</userreplace>
  <userreplace>RRGGBBDD</userreplace>
  <userreplace>RRGGBBDD</userreplace>
- <userreplace>etc.</userreplace> 
+ <userreplace>etc.</userreplace>
 </syntax>
 
 <!-- parameters -->
-<parameter name="RRGGBBDD">8 hex digits, such that &hex;RRGGBBDD is the number to be placed in the calibration table</parameter> 
+<parameter name="RRGGBBDD">8 hex digits, such that &hex;RRGGBBDD is the number to be placed in the calibration table</parameter>
 
 <use>
 <p>*ColourTransMap sets up a calibration table from its parameters. The
 number of parameters passed for each component must have been specified in a
-previous *ColourTransMapSize command.</p>
+previous <reference type="command" name="ColourTransMapSize" /> command.</p>
 
 <p>The main purpose of this command is to enable the Task Manager to save
 the calibration when a desktop save is done.</p>
@@ -2165,14 +2252,14 @@ the calibration when a desktop save is done.</p>
 
 <example>
 
-<command>*ColourTransMap 01000000 FF0000FF 00020000 00FE00FF <i>etc.</i></command>
+<command>*ColourTransMap 01000000 FF0000FF 00020000 00FE00FF ...</command>
 
 </example>
 
 <related>
 <reference type="command" name="ColourTransMapSize" />
 <reference type="swi" name="ColourTrans_WriteCalibrationToFile" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </command-definition>
@@ -2183,7 +2270,7 @@ the calibration when a desktop save is done.</p>
 <syntax>
  <userreplace>n1</userreplace>
  <userreplace>n2</userreplace>
- <userreplace>n3</userreplace> 
+ <userreplace>n3</userreplace>
 </syntax>
 
 <!-- parameters -->
@@ -2191,14 +2278,16 @@ the calibration when a desktop save is done.</p>
 <parameter name="n1">number of parameters to be passed in *ColourTransMap for component 1</parameter>
 
 <parameter name="n2">number of parameters to be passed in *ColourTransMap for component 2</parameter>
-<parameter name="n3">number of parameters to be passed in *ColourTransMap for component 3</parameter> 
+<parameter name="n3">number of parameters to be passed in *ColourTransMap for component 3</parameter>
 
 <use>
 <p>*ColourTransMapSize sets the number of parameters that will be passed in
-the next *ColourTransMap command for each component. It hence also sets the
-size of the resultant calibration table, which will be (3 + n1 + n2 + n3)
-words long. The values n1, n2 and n3 are given in the reverse order to a
-standard calibration table.</p>
+the next <reference type="command" name="ColourTransMap"/> command for each
+component. It hence also sets the size of the resultant calibration table,
+which will be (3 + <userinput>n1</userinput> + <userinput>n2</userinput> +
+<userinput>n3</userinput>) words long. The values <userinput>n1</userinput>,
+<userinput>n2</userinput> and <userinput>n3</userinput> are given in the
+reverse order to a standard calibration table.</p>
 
 <p>The main purpose of this command is to enable the Task Manager to save
 the calibration when a desktop save is done.</p>
@@ -2208,15 +2297,13 @@ the calibration when a desktop save is done.</p>
 </use>
 
 <example>
-
 <command>*ColourTransMapSize 8 10 8</command>
-
 </example>
 
 <related>
 <reference type="command" name="ColourTransMap" />
 <reference type="swi" name="ColourTrans_WriteCalibrationToFile" />
-<reference type="vector" name="ColourV" href="?" />
+<reference type="vector" name="ColourV" />
 
 </related>
 </command-definition>
@@ -2234,6 +2321,17 @@ the calibration when a desktop save is done.</p>
 
  <history>
   <revision number="1" author="ROL" title="Initial version" />
+  <revision number="2" date="27 Feb 2002" author="AMH" title="PRM Consistency fixes">
+    <change>Removed PRM-DTD 1.00 compliancy issues</change>
+    <change>Added / improved links</change>
+    <change>Removed RISC OS 2 ColourTrans caveats</change>
+  </revision>
+  <revision number="3" date="20 Nov 2002" author="ROL" title="Validation">
+    <change>XML validates now</change>
+  </revision>
+  <revision number="4" date="04 Mar 2004" author="ROL" title="ColourV">
+    <change>ColourV is now documented.</change>
+  </revision>
  </history>
 </meta>
 </riscos-prm>

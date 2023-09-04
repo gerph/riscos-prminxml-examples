@@ -301,4 +301,4 @@ if [[ "$1" = 'install' ]] ; then
 fi
 
 echo Run the build...
-make -f MakefilePOSIX
+make -f MakefilePOSIX "$@"

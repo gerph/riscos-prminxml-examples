@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN" 
-                            "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.03//EN"
+                            "http://gerph.org/dtd/103/prm.dtd">
 
 <riscos-prm>
 
@@ -14,10 +14,8 @@
 FileSwitch and FileCore, provides a RAM-based filing system.</p>
 
 <p>Most of the facilities that you will use with RamFS are in fact provided
-by FileCore and FileSwitch, and you should read the chapters on those
-modules (on <reference href="FILESWITCH.HTML#24409">FileSwitch</reference>
-and <reference href="FILECORE.HTML#29018">FileCore</reference> respectively)
-in conjunction with this one.</p>
+by FileCore and FileSwitch and,
+and you should read the chapters on those modules in conjunction with this one.</p>
 
 </section>
 
@@ -25,8 +23,7 @@ in conjunction with this one.</p>
 
 <p>RamFS is a module that provides the hardware-dependent part of a
 RAM-based filing system. It uses FileCore, and so conforms to the standards
-for a module that does so; see the chapter entitled <reference
-href="FILECORE.HTML#29018">FileCore</reference> for details.</p>
+for a module that does so; see the chapter entitled FileCore for details.</p>
 
 <p>It provides:</p>
 
@@ -55,29 +52,28 @@ of FileCore only) all of these are described below.</p>
                 >
 
 <entry>
-<p>See <reference href="FILECORE.HTML#18072">FileCore_DiscOp</reference></p> 
-
+<register-use number="0-8">same as FileCore_DiscOp</register-use>
 </entry>
 
 <exit>
-<p>See <reference href="FILECORE.HTML#18072">FileCore_DiscOp</reference></p> 
-
+<register-use number="0-6">same as FileCore_DiscOp</register-use>
 </exit>
 
 <use>
-<p>This SWI calls <reference
-href="FILECORE.HTML#18072">FileCore_DiscOp</reference>, after first setting
+<p>This SWI calls <reference type="swi" name="FileCore_DiscOp" href="filecore" />, after first setting
 R8 to point to the FileCore instantiation private word for RamFS.</p>
 
 <p>This call is functionally identical to FileCore_DiscOp.</p>
 </use>
 
 <related>
-<reference type="swi" name="FileCore_DiscOp" href="filecore.html" />
-<!-- None --> 
-
+<reference type="swi" name="FileCore_DiscOp" href="filecore" />
 </related>
+
 </swi-definition>
+
+
+
 <swi-definition name="RamFS_Drives"
                 number="40782"
                 description="Calls FileCore_Drives"
@@ -88,29 +84,30 @@ R8 to point to the FileCore instantiation private word for RamFS.</p>
                 >
 
 <entry>
-<p>See <reference href="FILECORE.HTML#81021">FileCore_Drives</reference></p> 
-
+<register-use number="8">pointer to FileCore instance private word</register-use>
 </entry>
 
 <exit>
-<p>See <reference href="FILECORE.HTML#81021">FileCore_Drives</reference></p> 
-
+<register-use number="0">default drive</register-use>
+<register-use number="1">number of floppy drives</register-use>
+<register-use number="2">number of hard disc drives</register-use>
 </exit>
 
 <use>
-<p>This SWI calls <reference
-href="FILECORE.HTML#81021">FileCore_Drives</reference>, after first setting
+<p>This SWI calls <reference type="swi" name="FileCore_Drives" href="filecore" />, after first setting
 R8 to point to the FileCore instantiation private word for RamFS.</p>
 <p>This call is functionally identical to FileCore_Drives.</p>
 
 </use>
 
 <related>
-<reference type="swi" name="FileCore_Drives" href="filecore.html" />
-<!-- None --> 
-
+<reference type="swi" name="FileCore_Drives" href="filecore" />
 </related>
+
 </swi-definition>
+
+
+
 <swi-definition name="RamFS_FreeSpace"
                 number="40783"
                 description="Calls FileCore_FreeSpace"
@@ -121,18 +118,21 @@ R8 to point to the FileCore instantiation private word for RamFS.</p>
                 >
 
 <entry>
-<p>See <reference href="FILECORE.HTML#77584">FileCore_FreeSpace</reference></p> 
-
+<register-use number="0">pointer to disc specifier (null terminated)</register-use>
+<register-use number="8">pointer to FileCore instance private word</register-use>
 </entry>
 
 <exit>
-<p>See <reference href="FILECORE.HTML#77584">FileCore_FreeSpace</reference></p> 
-
+<register-use number="0">total free space on disc</register-use>
+<register-use number="1">size of largest object that can be created, or:
+<value-table>
+<value number="&hex;7FFFFFFF">Object is at least 2 GB in size</value>
+</value-table>
+</register-use>
 </exit>
 
 <use>
-<p>This SWI calls <reference
-href="FILECORE.HTML#77584">FileCore_FreeSpace</reference>, after first
+<p>This SWI calls <reference type="swi" name="FileCore_FreeSpace" href="filecore" />, after first
 setting R8 to point to the FileCore instantiation private word for
 RamFS.</p>
 
@@ -140,11 +140,13 @@ RamFS.</p>
 </use>
 
 <related>
-<reference type="swi" name="FileCore_FreeSpace" href="filecore.html" />
-<!-- None --> 
-
+<reference type="swi" name="FileCore_FreeSpace" href="filecore" />
 </related>
+
 </swi-definition>
+
+
+
 <swi-definition name="RamFS_DescribeDisc"
                 number="40785"
                 description="Calls FileCore_DescribeDisc"
@@ -155,89 +157,88 @@ RamFS.</p>
                 >
 
 <entry>
-<p>See <reference href="FILECORE.HTML#69090">FileCore_DescribeDisc</reference></p> 
-
+<register-use number="0">pointer to disc specifier (null terminated)</register-use>
+<register-use number="1">pointer to 64 byte block</register-use>
+<register-use number="8">pointer to FileCore instance private word</register-use>
 </entry>
 
 <exit>
-<p>See FileCore_DescribeDisc (<reference href="FILECORE.HTML#77584">FileCore_FreeSpace</reference>)</p> 
 </exit>
 
 <use>
-<p>This SWI calls FileCore_DescribeDisc (<reference
-href="FILECORE.HTML#77584">FileCore_FreeSpace</reference>), after first
+<p>This SWI calls <reference type="swi" name="FileCore_DescribeDisc" href="filecore" />, after first
 setting R8 to point to the FileCore instantiation private word for
-RamFS.</p> <p>This call is functionally identical to
-FileCore_DescribeDisc.</p>
+RamFS.</p>
+
+<p>This call is functionally identical to FileCore_DescribeDisc.</p>
 
 </use>
 
 <related>
-<reference type="swi" name="FileCore_DescribeDisc" href="filecore.html" />
-<reference type="swi" name="FileCore_FreeSpace" href="filecore.html" />
-<!-- None --> 
-
+<reference type="swi" name="FileCore_DescribeDisc" href="filecore" />
 </related>
+
 </swi-definition>
+
 </section>
-<section title="* Commands">
+<section title="*Commands">
+
+
 
 <command-definition name="Configure RamFsSize"
                     description="Sets the configured amount of memory reserved for the RAM filing system"
                     >
 
 <syntax>
- <userreplace>m</userreplace>K|<userreplace>n</userreplace> 
+<userreplace>m</userreplace><optional><text>K</text></optional>|<userreplace>n</userreplace>
 </syntax>
 
 <!-- parameters -->
 
-<parameter name="m">K - number of kilobytes of memory reserved</parameter>
-<parameter name="n">number of pages of memory reserved;
-                    n &le; 127</parameter> 
+<parameter name="m">number of kilobytes of memory reserved</parameter>
+<parameter label="K">optional term to specify value in kilobytes</parameter>
+<parameter name="n">number of pages of memory reserved; n &le; 127</parameter>
 
 <use>
 <p>*Configure RamFsSize sets the configured amount of memory reserved for
 the RAM Filing System to use (when the RAMFS module is present) after the
 next hard reset. The default value is 0, which disables the RAM filing
-system.</p> 
+system.</p>
 
 </use>
 
 <example>
 <p>
-<userinput>*Configure RamFSSize 128K</userinput>
+<command>*Configure RamFSSize 128K</command>
 </p>
 </example>
 
 <related>
-<!-- None --> 
-<reference type="swi" name="OS_ChangeDynamicArea" href="memoryman.html" />
-<reference type="swi" name="OS_ReadRAMFsLimits" href="memoryman.html" />
-<!-- None --> 
-
+<reference type="swi" name="OS_ChangeDynamicArea" href="../memory/das" />
+<reference type="swi" name="OS_ReadRAMFsLimits" href="../compatibility/deprecated" />
 </related>
+
 </command-definition>
+
+
 <command-definition name="Ram"
                     description="Selects the RAM Filing System as the current filing system"
                     >
 
 <syntax>
- 
-
 </syntax>
 
 <!-- parameters -->
-<!-- None --> 
+<!-- None -->
 
 <use>
 <p>*Ram selects the RAM Filing System as the filing system for subsequent
 operations. Remember that it is not necessary to switch filing systems if
-you use the full pathnames of objects. For example, you can refer to NetFS
+you use the full pathnames of objects. For example, you can refer to <reference type="document" name="NetFS" href="netfs" />
 objects (on a file server, say) when RamFS is the current filing system.</p>
 
 <p>Memory must have previously been reserved for the RAM filing system; the
-simplest ways to do so are to use the command *Configure RamFSSize, or to
+simplest ways to do so are to use the command <reference type="command" name="Configure RamFSSize" />, or to
 use the Task Manager from the desktop.</p>
 
 </use>
@@ -249,10 +250,10 @@ use the Task Manager from the desktop.</p>
 </example>
 
 <related>
-<reference type="command" href="?" name="ADFS" />
-<reference type="command" href="?" name="Configure" reason="RamFSSize" />
-<reference type="command" href="?" name="Net" />
-<reference type="command" href="?" name="ResourceFS" />
+<reference type="command" name="ADFS" href="adfs" />
+<reference type="command" name="Configure RamFSSize" />
+<reference type="command" name="Net" href="netfs" />
+<reference type="command" name="ResourceFS" href="resourcefs" />
 
 </related>
 </command-definition>
@@ -270,6 +271,10 @@ use the Task Manager from the desktop.</p>
 
  <history>
   <revision number="1" author="ROL" title="Initial version" />
+  <revision number="2" date="22 Mar 2003" author="ROL" title="Reference correction2">
+   <change>Old style (pre-1.00) references were used; updated to 1.00 form.
+   </change>
+  </revision>
  </history>
 </meta>
 </riscos-prm>
