@@ -295,5 +295,10 @@ if [[ "$PRINCEXML_I_HAVE_A_LICENSE" = 1 ]] ; then
 fi
 
 
+if [[ "$1" = 'install' ]] ; then
+    echo "Just installed components."
+    exit
+fi
+
 echo Run the build...
 make -f MakefilePOSIX
