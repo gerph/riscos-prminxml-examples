@@ -53,7 +53,7 @@ jobs:
           # use the non-commercial license.
           sudo env PRINCEXML_I_HAVE_A_LICENSE=1 ./build.sh
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v6
         with:
           name: PRMinXML-Examples
           path: artifacts/docs
