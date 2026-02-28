@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
-<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.02//EN"
-                            "http://gerph.org/dtd/102/prm.dtd">
+<!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.03//EN"
+                            "http://gerph.org/dtd/103/prm.dtd">
 
 <riscos-prm>
 <chapter title="Program Environment (supplement for Pyromaniac)">
 <section title="Introduction and Overview">
 
 <p>
-    This chapter documents the changes to the program environment for Pyromaniac.
+    This chapter documents the changes to the program environment for RISC OS Pyromaniac.
 </p>
 
 
@@ -16,18 +16,32 @@
 
 <section title="Technical details">
 <p>
-    Largely, the program environment in Pyromaniac is as documented within the Program Environment Chapter.
+    Largely, the program environment in RISC OS Pyromaniac is as documented within the Program Environment Chapter.
     However, certain interfaces are slightly different to make extensions to the system simpler.
 </p>
 
-<subsection title="Handler 13: Exception register area">
+<subsection title="Handler 7: Callback handler">
     <p>
-        On 26bit systems, the exception register area is 16 words (64 bytes) long. This area stores the
-        registers at the time of an exception (Prefetch abort, data abort, or address exception).
+        On 26bit systems, the register buffer in the callback handler is 16 words (64 bytes) long.
+        This area stores the registers at the time of a call to the callback
+        (threading back to user mode).
     </p>
     <p>
-        On 32bit systems, the exception register area is 17 words (68 bytes) long. This is the same
+        On 32bit systems, the register buffer is 17 words (68 bytes) long. This is the same
         layout as the 26bit system, but with the value of the CSPR in the final word.
+    </p>
+    <p>
+        The size of the exception register area, and its layout is described by
+        <reference type="swi" name="OS_PlatformFeatures" reason="64"/>. This new SWI describes
+        the architecture of the system, the instruction lengths, and the layout and size of
+        registers used by the system.
+    </p>
+</subsection>
+
+<subsection title="Handler 13: Exception register area">
+    <p>
+        The format of the exception register area is the same as the callback handler register
+        buffer.
     </p>
 </subsection>
 
@@ -67,6 +81,33 @@
         system configuration.
     </p>
 </subsection>
+
+
+<subsection title="Handler 34: Exception dump region">
+    <p>
+        It can be useful to know what was being executed at the time of an exception. The exception
+        dump area records the registers at the time of the exception, but what was actually being run
+        is not clear. The exception dump region will be written to at the time of the exception,
+        with a copy of the data that was written. If the memory is subsequently erased, or memory
+        moved around, this data will have been preserved in the exception area.
+    </p>
+    <p>
+        The format of the block is:
+    </p>
+    <p>
+        <offset-table>
+            <offset number="0">PC at the time of the exception. If this does not match the exception
+                dump, the data in the block is not valid.</offset>
+            <offset number="4">Base address of the memory region which follows.</offset>
+            <offset number="8">Size in bytes of the memory region which follows.</offset>
+            <offset number="12">Data from the base address.</offset>
+        </offset-table>
+    </p>
+    <p>
+        The default dump region size under RISC OS Pyromaniac is 21 words; 17 words before, and 3 after
+        the faulting instruction.
+    </p>
+</subsection>
 </section>
 
 
@@ -91,15 +132,19 @@
 
 <exit>
     <register-use number="0" state="preserved"/>
-    <register-use number="1" state="preserved"/>
-    <register-use number="2">Previous command line buffer length</register-use>
-    <register-use number="3">Previous command line buffer address</register-use>
+    <register-use number="1">Previous branch through 0 handler</register-use>
+    <register-use number="2" state="preserved"/>
+    <register-use number="3" state="preserved"/>
 </exit>
 
 <use>
 <p>This SWI is used to read or update the address of the handler used when a call is made to address 0.</p>
 <p>The handler will be entered in SVC mode. The registers will be preserved from the time of call. This means that the banked SVC registers will be in the state they were when the call was made, even when called in USR mode. The registers and CPSR at the time of the call will be stored in the Exception registers area.</p>
 </use>
+
+<compatibility>
+    <version supplier="RISC OS Pyromaniac" riscos-ge="7.08" state="supported"/>
+</compatibility>
 
 <related>
 </related>
@@ -134,9 +179,206 @@
 <p>This SWI is used to read or update the address and size of the area of memory used to store the command line buffer.</p>
 </use>
 
+<compatibility>
+    <version supplier="RISC OS Pyromaniac" riscos-ge="7.00" state="supported"/>
+</compatibility>
+
 <related>
+    <reference type="swi" name="OS_GetEnv" href="?"/>
+    <reference type="swi" name="OS_WriteEnv" href="?"/>
 </related>
 </swi-definition>
+
+
+<swi-definition name="OS_ChangeEnvironment"
+                number="40"
+                reason="34"
+                reasonname="ExceptionDumpRegion"
+                description="Set or read the area used to store memory around the faulting instructions"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">34 (reason code)</register-use>
+ <register-use number="1">Ignored</register-use>
+ <register-use number="2">Size of the exception dump region buffer, or 0 to read the current size</register-use>
+ <register-use number="3">Pointer to the exception dump region buffer, or 0 to read the current buffer</register-use>
+</entry>
+
+<exit>
+    <register-use number="0" state="preserved"/>
+    <register-use number="1" state="preserved"/>
+    <register-use number="2">Previous exception dump region size</register-use>
+    <register-use number="3">Previous exception dump region buffer</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to read or update the address and size of the area of memory used to instructions around the
+    last exception.</p>
+</use>
+
+<compatibility>
+    <version supplier="RISC OS Pyromaniac" riscos-ge="7.60" state="supported"/>
+</compatibility>
+
+<related>
+    <reference type="swi" name="OS_ChangeEnvironment" reason='13' href="?"/>
+</related>
+</swi-definition>
+
+
+<swi-definition name="OS_PlatformFeatures"
+                number="6D"
+                reason="64"
+                reasonname="DescribeCPURegisters"
+                description="Describe CPU architecture and register layout"
+                irqs="undefined"
+                fiqs="enabled"
+                processor-mode="SVC"
+                re-entrant="no">
+
+<entry>
+ <register-use number="0">64 (reason code)</register-use>
+</entry>
+
+<exit>
+    <register-use number="0">Pointer to a static block describing the CPU register layout</register-use>
+</exit>
+
+<use>
+<p>This SWI is used to read a table describing the layout of registers within the register dump area. The layout has
+    changed through different iterations of RISC OS, and it has been necessary to be aware of the system configuration
+    to infer the layout of registers in the register dump areas. This SWI describes the layout in an architecture
+    agnostic manner, to allow code to determine that system layout programatically.</p>
+
+<p>The information returned in this block may be used by the Debugger module to describe the layout of recent abort.</p>
+
+<p>The structure returned contains information about the CPU architecture, instruction lengths, the length of the
+    register dump area, and details of the layout of the registers within the area. The structure has a header
+    with the following layout:</p>
+
+<p>
+    <offset-table>
+        <offset number="0"><p>Architecture identifier:</p>
+            <p><value-table>
+                <value number="0">ARM 32 bit (A32)</value>
+                <value number="1">ARM 64 bit (A64)</value>
+                <value number="2">x86 64 bit (x86-64)</value>
+                <value number="3">Thumb</value>
+                <value number="other">Reserved for future expansion</value>
+            </value-table></p>
+        </offset>
+
+        <offset number="4">Minimum instruction length in bytes</offset>
+        <offset number="8">Maximum instruction length in bytes</offset>
+        <offset number="12">Total length of the register dump block</offset>
+    </offset-table>
+</p>
+
+<p>This information should allow diagnostic tools to decide whether and how to debug
+    code on the system. It is followed by repeated entries which describe the
+    content of the register dump block. Each entry is 16 bytes long. The entries describe
+    features of the register block. There are currently 2 definition types defined.
+    The list is terminated by a word which contains -1 as the first word of the entry.
+</p>
+
+<p>Registers within the dump block are defined with an entry for type 0:</p>
+
+<p>
+    <offset-table>
+        <offset number="0"><p>Definition type and identifier:</p>
+            <p>
+                <bitfield-table>
+                    <bit number="0-23">Register identifier. This is a unique identifier for each register value.
+                        Values 0-16 are defined to be the registers for Aarch32, plus the CPSR. Other values
+                        may be used for different architectures.</bit>
+                    <bit number="24-30">0 (definition type: register)</bit>
+                    <bit number="31" state="clear">Always clear (a set bit indicates the end of the list)</bit>
+                </bitfield-table>
+            </p>
+        </offset>
+        <offset number="4">Offset from the start of the header to the name of this register</offset>
+        <offset number="8">Offset from the start of the register dump to the register data, or -1 if register is not present in the register dump</offset>
+        <offset number="12"><p>Flags for register purpose:</p>
+            <p>
+                <bitfield-table>
+                    <bit number="0-11">size of register value in bits</bit>
+                    <bit number="12-15"><p>register type:</p>
+                        <p>
+                            <value-table>
+                                <value number="0">general purpose register</value>
+                                <value number="1">stack pointer</value>
+                                <value number="2">link register</value>
+                                <value number="3">program counter</value>
+                                <value number="4">state flags</value>
+                                <value number="5-15">reserved for future use</value>
+                            </value-table>
+                        </p>
+                    </bit>
+                    <bit number="16-23">bit alignment of register value
+                                        (for example, 0 for byte alignment, 2 for 4 byte (word) alignment,
+                                         4 for 16 byte alignment)</bit>
+                    <bit number="24-31" state="reserved" />
+                </bitfield-table>
+            </p>
+        </offset>
+    </offset-table>
+</p>
+
+<p>Registers which contain system state in flags, which have register type 4, may be further defined
+    with entries which immediate follow them. The entries may describe the layout of the flags,
+    identified as a type 1 definition:</p>
+<p>
+    <offset-table>
+        <offset number="0"><p>Definition type and identifier:</p>
+            <p>
+                <bitfield-table>
+                    <bit number="0-7">Base bit number within the flags register (base bits may be 0 to 255)</bit>
+                    <bit number="8-21">Value described in this entry (if bit 23 set), or 0 (if bit 23 clear)</bit>
+                    <bit number="22" state="clear">Indicates that no (more) 'value' entries for this field follow this entry.
+                                                   If this is the name of the field, it indicates that there are no values
+                                                   preset. If this is a value of the field, it indicates that this is the
+                                                   final value of the enumeration.</bit>
+                    <bit number="22" state="set">Indicates that there are 'value' entries for this field follow this entry</bit>
+                    <bit number="23" state="clear">Indicates that this entry is the name of the field</bit>
+                    <bit number="23" state="set">Indicates that this entry is an enumerated value of the field</bit>
+                    <bit number="24-30">1 (definition type: flag)</bit>
+                    <bit number="31" state="clear">Always clear (a set bit indicates the end of the list)</bit>
+                </bitfield-table>
+            </p>
+        </offset>
+        <offset number="4">Offset from the start of the header to the name of this flag's name or enumerated value</offset>
+        <offset number="8">0 (has no meaning in this definition type)</offset>
+        <offset number="12"><p>Flags for register purpose:</p>
+            <p>
+                <bitfield-table>
+                    <bit number="0-7">size of field value in bits</bit>
+                    <bit number="8-31" state="reserved" />
+                </bitfield-table>
+            </p>
+        </offset>
+    </offset-table>
+</p>
+
+<p>Flag values may be described in diagnostic software by interpreting this table. Some fields which have multiple values
+    may be enumerated to give names to the values of the field. They will be described first as a field name
+    (bit 22+23 set to 00), followed by 0 or more enumerated values (bit 22+23 set to 11), terminating with a final
+    enumerated value (bit 22+23 set to 01).</p>
+
+</use>
+
+<compatibility>
+    <version supplier="RISC OS Pyromaniac" riscos-ge="7.55" state="supported"/>
+</compatibility>
+
+<related>
+    <reference type="swi" name="OS_ChangeEnvironment" reason="7" href="?"/>
+    <reference type="swi" name="OS_ChangeEnvironment" reason="13" href="?"/>
+</related>
+</swi-definition>
+
 </section>
 
 </chapter>
@@ -149,13 +391,27 @@
  </maintainer>
  <disclaimer>
     <p>
-        &copy; Gerph, 2020.
+        &copy; Gerph, 2020-24.
     </p>
  </disclaimer>
 
  <history>
   <revision number="1" author="Gerph" date="11 Nov 2020" title="Initial version">
     <change>Created</change>
+  </revision>
+
+  <revision number="2" author="Gerph" date="17 Sep 2023" title="Cleaned up version information">
+    <change>Version information is now in compatibility sections.</change>
+    <change>Support in different systems has been made clearer.</change>
+  </revision>
+
+  <revision number="3" author="Gerph" date="30 Dec 2023" title="CPU register descriptor added">
+    <change>OS_PlatformFeatures 64 describes the CPU register layout in the register dump blocks.</change>
+    <change>Updated notes for Callback handler, which uses the same layout as the exception registers.</change>
+  </revision>
+
+  <revision number="4" author="Gerph" date="05 Jun 2024" title="ExceptionDumpRegion">
+    <change>OS_ChangeEnvironment 34 (ExceptionDumpRegion) added.</change>
   </revision>
  </history>
 
