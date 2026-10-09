@@ -312,7 +312,7 @@ buffered for that stream at any time.</p>
 
 
 <swi-definition name="SharedSoundBuffer_BufferStats"
-                number="52E08"
+                number="55FC8"
                 description="Find out information about the buffer"
                 irqs="undefined"
                 fiqs="enabled"
