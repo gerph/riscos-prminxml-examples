@@ -1638,17 +1638,27 @@ reading the decimation always returns 1000000.
   </bitfield-table>
  </register-use>
  <register-use number="1">reason code :
-  <value-table>
+  <value-table head-number="Value" head-value="Meaning">
    <value number="0">Register plugin</value>
    <value number="1">Deregister plugin</value>
+   <value number="2">Enumerate plugins</value>
+   <value number="&hex;10">Register frame processor</value>
+   <value number="&hex;11">Deregister frame processor</value>
+   <value number="&hex;12">Enumerate frame processors</value>
   </value-table>
  </register-use>
- <register-use number="2">private word to pass in R0</register-use>
- <register-use number="3">pointer to <reference type="entry" name="Plugin_PreProcess">pre-processor (pre-DCT)</reference>, or 0 for none
- </register-use>
- <register-use number="4">pointer to <reference type="entry" name="Plugin_PostProcess">post-processor (post-DCT)</reference>, or 0 for
- none</register-use>
- <register-use number="5">pointer to static
+ <register-use number="2">for reasons 0, 1, &hex;10 and &hex;11: private word to pass in R0<br />
+                          for reasons 2 and &hex;12: 0 to start the enumeration, or the value
+                          returned by the previous call to continue it</register-use>
+ <register-use number="3">for reasons 0 and 1: pointer to
+   <reference type="entry" name="Plugin_PreProcess">pre-processor (pre-DCT)</reference>, or 0 for none<br />
+                          for reasons &hex;10 and &hex;11: pointer to
+   <reference type="entry" name="Plugin_PreFrame">frame pre-processor</reference></register-use>
+ <register-use number="4">for reasons 0 and 1: pointer to
+   <reference type="entry" name="Plugin_PostProcess">post-processor (post-DCT)</reference>, or 0 for
+   none<br />
+                          for reasons &hex;10 and &hex;11: reserved, must be 0</register-use>
+ <register-use number="5">for reasons 0 and &hex;10: pointer to static
    <reference type="subsubsection" name="Plugin Information Block" />
  </register-use>
  <register-use number="8">if bit 31 of R0 set:<br />
@@ -1656,8 +1666,25 @@ reading the decimation always returns 1000000.
                           the base</register-use>
 </entry>
 
+<exit>
+ <register-use number="2">for reasons 2 and &hex;12: an opaque value identifying the next
+                          plugin in the list, or 0 if there are no more; pass it back in R2 to
+                          continue the enumeration</register-use>
+</exit>
+
 <use>
-<p>This SWI is used to register or deregister plugins.</p>
+<p>This SWI is used to register or deregister plugins, and to list the plugins which
+are registered.</p>
+<p>There are two kinds of plugin. A DCT plugin has a pre-processor and a post-processor,
+which are called around the decoding of the frequencies into samples. A frame processor is
+called with each frame of the file before it is decoded, and can ask for the frame to be
+discarded. Each has its own list, registered, deregistered and enumerated with its own
+reason codes. A plugin is deregistered by giving the private word and the same entry points
+that it was registered with.</p>
+<p>The value returned by the enumeration reasons identifies a plugin to the module, and is
+meaningful only as the value to give back to continue the enumeration. The
+Plugin Information Block of each registered plugin is shown by
+<reference type="command" name="AMInfo" />.</p>
 </use>
 
 <related>
@@ -2016,7 +2043,7 @@ active.</p>
 
 
 <swi-definition name="AMPlayer_MetaDataLookup"
-                number="52E0C"
+                number="52E0D"
                 description="Read meta-data token value"
                 irqs="undefined"
                 fiqs="enabled"
@@ -2547,6 +2574,129 @@ buffer is for the left or right channel. </p>
 </related>
 
 </entry-definition>
+
+<entry-definition name="Plugin_PreFrame"
+                 description="Pre-process an audio frame"
+                 irqs="undefined"
+                 fiqs="enabled"
+                 processor-mode="SVC"
+                 re-entrant="no"
+                 >
+<entry>
+ <register-use number="0">private word</register-use>
+ <register-use number="1">frame header, as a number with the first byte of the frame in bits 24-31</register-use>
+ <register-use number="2">pointer to the frame</register-use>
+ <register-use number="3">length of the frame in bytes</register-use>
+</entry>
+<exit>
+ <register-use number="0">0 if the frame should be decoded<br />
+                          non-zero if the frame should be discarded
+ </register-use>
+</exit>
+
+<use>
+<p>This entry is called for each frame of the file, before it is decoded. If any of the
+registered frame processors returns non-zero the frame is skipped, without being processed.
+Every registered frame processor is called, whatever the others return.</p>
+</use>
+
+<related>
+<reference type="swi" name="AMPlayer_Plugin" />
+</related>
+
+</entry-definition>
+</section>
+
+<section title="Error messages">
+<p>
+The module allocates the errors from &hex;816B00. The text of some varies with the file or
+reason which caused them.
+</p>
+
+<error-definition name="AMPlayer_BadVolume" number="816B02" description="Volume out of range">
+<use><p>The volume given to <reference type="swi" name="AMPlayer_Control" reason="0" /> is not in the range 0 to 127.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadParameter" number="816B03" description="Number not recognised">
+<use><p>A number or a time given to <reference type="command" name="AMVolume" /> or <reference type="command" name="AMLocate" /> was not understood. The message is <userinput>Time not recognised</userinput> for a time.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadFile" number="816B04" description="File '%s' wouldn't open">
+<use><p>The file or stream could not be opened, or its size could not be found. The message names the file.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_NoMemory" number="816B06" description="Can't get enough memory to play">
+<use><p>There was not enough memory to start playing, to open a stream, or to create an instance.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadProcessor" number="816B07" description="This version of AMPlayer requires ARM7M, StrongARM, or similar">
+<use><p>The module is the wrong build for the processor or the floating point hardware in the machine. The message says which.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_NoID3" number="816B08" description="ID3v2 support disabled">
+<use><p>The ID3v2 control of <reference type="swi" name="AMPlayer_Control" reason="3" /> is not supported by this build of the module, or the reason given for it is not known.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadPlugin" number="816B09" description="Plugin not found">
+<use><p>The plugin to deregister was not found, or no filter, or a bad <reference type="subsubsection" name="Plugin Information Block" />, was given to <reference type="swi" name="AMPlayer_Plugin" />.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadBitrate" number="816B0A" description="Free format not supported">
+<use><p>The file uses a free-format bit rate, which the module cannot play.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadHeader" number="816B0B" description="Could not find a proper header">
+<use><p>The file does not have a valid MPEG audio header, or has a RIFF header which is truncated or malformed, or an ID3v2 tag which is corrupt.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadControl" number="816B0C" description="Bad reason for AMPlayer_Control">
+<use><p>The reason given to <reference type="swi" name="AMPlayer_Control" /> is not known.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadID3Tag" number="816B0D" description="Bad ID3 tag parameter">
+<use><p>A parameter to the ID3v2 control of <reference type="swi" name="AMPlayer_Control" reason="3" /> is not valid.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadStream" number="816B0E" description="No such stream">
+<use><p>The stream handle given to a stream SWI does not refer to an open stream.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_StreamLocate" number="816B0F" description="Cannot locate on a stream">
+<use><p><reference type="swi" name="AMPlayer_Locate" /> was called while a stream was playing; a stream cannot be located within.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadInstanceCode" number="816B11" description="Unknown AMPlayer_Instance reason code!">
+<use><p>The reason given to <reference type="swi" name="AMPlayer_Instance" /> is not known.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadInstanceKill" number="816B12" description="Can't kill the base instance off!">
+<use><p>The instance to destroy given to <reference type="swi" name="AMPlayer_Instance" reason="2" /> is the base instance, or does not exist.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BufferTooShort" number="816B13" description="Buffer too short">
+<use><p>The buffer given to the enumerate reason of <reference type="swi" name="AMPlayer_Instance" reason="4" /> is too short to hold the name of an instance.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadTransience" number="816B14" description="The base instance cannot be transient">
+<use><p>The transience control was applied to the base instance.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadDecimate" number="816B15" description="Unknown AMPlayer_Control Decimation sub-reason code.">
+<use><p>The sub-reason given to the decimation control of <reference type="swi" name="AMPlayer_Control" reason="5" /> is not known.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadInstance" number="816B16" description="Bad instance handle for AMPlayer">
+<use><p>The instance handle given to a SWI, with bit 31 of R0 set, or to the enumerate reason of <reference type="swi" name="AMPlayer_Instance" reason="4" />, does not refer to an instance.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadFramePlugin" number="816B17" description="Frame plugin not found">
+<use><p>The frame processor to deregister was not found, or no filter, a reserved field set, or a bad information block, was given to <reference type="swi" name="AMPlayer_Plugin" />.</p></use>
+</error-definition>
+
+<error-definition name="AMPlayer_BadPluginCode" number="816B18" description="Bad reason code to AMPlayer_Plugin">
+<use><p>The reason given to <reference type="swi" name="AMPlayer_Plugin" /> is not known.</p></use>
+</error-definition>
+
 </section>
 
 <section title="*Commands">
@@ -2655,14 +2805,17 @@ state, or the state of the plugins.</p>
 <command-definition name="AMPlay"
                     description="Play a new file">
 <syntax>
- <optional><switch name="next" /></optional>
+ <switch name="next" />
+</syntax>
+<syntax>
  <optional><switch name="queue" /></optional>
  <optional><switch name="cue" /></optional>
  <optional><switch name="transient" /></optional>
  <userreplace>filename</userreplace>
 </syntax>
 
-<parameter switch="next">Start playback of queued file immediately</parameter>
+<parameter switch="next">Stop the file that is playing, and start the file which is queued
+next. It is given on its own, with no filename.</parameter>
 <parameter switch="queue">Queue this file, rather than playing it
 immediately</parameter>
 <parameter switch="cue">Start decoding this track, but leave the player
@@ -2671,7 +2824,8 @@ paused</parameter>
 which will terminate when playback completes.</parameter>
 
 <use>
-<p>This command is used to play a new file.</p>
+<p>This command is used to play a new file, or, with <userinput>-next</userinput>, to move on to
+the file which has been queued.</p>
 </use>
 
 <example>
@@ -2711,7 +2865,7 @@ which will terminate when playback completes.</parameter>
 
 
 <command-definition name="AMVolume"
-                    description="AMVolume">
+                    description="Set the playback volume">
 <syntax>
  <optional alternates="true">
   <text>+</text>
@@ -2720,10 +2874,11 @@ which will terminate when playback completes.</parameter>
  <userreplace>volume</userreplace>
 </syntax>
 
-<parameter name="volume">volume level (0-127)</parameter>
+<parameter name="volume">volume level (0-127). With a leading + or - the volume is changed
+by that amount from the current level.</parameter>
 
 <use>
-<p>This command is set the playback volume. Initially, 113 is selected.</p>
+<p>This command is used to set the playback volume. Initially, 113 is selected.</p>
 </use>
 
 <example>
@@ -2759,6 +2914,12 @@ which will terminate when playback completes.</parameter>
   <revision number="1" author="JRF" title="First XML monitored version">
    <change>First version of the document which includes revision
            information.</change>
+  </revision>
+  <revision number="2" author="Charles Ferguson" date="9 Oct 2026" title="Updated for the implementation">
+   <change>Corrected the number of AMPlayer_MetaDataLookup (&hex;52E0D). Documented the plugin
+           reasons for enumeration and frame processors, with the frame processor entry point, and the
+           errors the module returns. Corrected the forms of *AMPlay and described the relative
+           form of *AMVolume.</change>
   </revision>
  </history>
 
